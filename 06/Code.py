@@ -1,5 +1,4 @@
 class Code:
-
     def __init__(self, parsedAsmLines, symbolDict):
         self.binaryList = []
 
