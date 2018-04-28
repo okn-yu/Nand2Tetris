@@ -1,5 +1,4 @@
 class Parser:
-
     def __init__(self, fileName):
         self._commandsList = []
         self._currentCommand = ''
