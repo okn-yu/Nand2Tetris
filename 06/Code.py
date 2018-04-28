@@ -1,11 +1,33 @@
 class Code:
+    def __init__(self, parsedAsmLines, symbolDict):
+        self.binaryList = []
 
-    def __init__(self):
-        pass
+        for parsedAsmDict in parsedAsmLines:
+            self._parse(parsedAsmDict, symbolDict)
 
-    def dest(cls, destMnemonic):
+    def _parse(self, parsedAsmDict, symbolDict):
+        symbol = parsedAsmDict.get('symbol')
+        commandType = parsedAsmDict.get('commandType')
 
-        if destMnemonic == 'null':
+        if commandType == 'L_COMMAND':
+            return
+
+        if commandType == 'C_COMMAND':
+            binCode = '111' + self._comp(parsedAsmDict.get('comp')) + self._dest(parsedAsmDict.get('dest')) + self._jump(
+                parsedAsmDict.get('jump'))
+
+        if commandType == 'A_COMMAND':
+            if symbol.isdigit():
+                address = int(symbol)
+            else:
+                address = symbolDict[symbol]
+
+            binCode = '0' + (bin(address))[2:].zfill(15)
+
+        self.binaryList.append(binCode)
+
+    def _dest(self, destMnemonic):
+        if destMnemonic == None:
             return '000'
 
         if destMnemonic == 'M':
@@ -29,9 +51,7 @@ class Code:
         if destMnemonic == 'AMD':
             return '111'
 
-    @classmethod
-    def comp(cls, compMnemonic):
-
+    def _comp(self, compMnemonic):
         if compMnemonic == '0':
             return '0101010'
 
@@ -116,10 +136,9 @@ class Code:
         if compMnemonic == 'D|M':
             return '1010101'
 
-    @classmethod
-    def jump(cls, jumpMnemonic):
+    def _jump(self, jumpMnemonic):
 
-        if jumpMnemonic == 'null':
+        if jumpMnemonic == None:
             return '000'
 
         if jumpMnemonic == 'JGT':

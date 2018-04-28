@@ -1,6 +1,5 @@
 class SymbolTable:
-
-    def __init__(self):
+    def __init__(self, parsedAsmLines):
         self.symbolDict = {
             'SP': 0,
             'LCL': 1,
@@ -25,28 +24,43 @@ class SymbolTable:
             'R15': 15,
             'SCREEN': 16384,
             'KBD': 24576}
-
-        self.lineNumber = 0
-        self.variableAddress = 16
-        self.variableDict = {}
-        self.labelDict = {}
         self.symbolList = []
+        self.lineNumber = 0
+        self._parse(parsedAsmLines)
+        self._createSymbolTable()
 
-    def addEntry(self, symbol, address):
+    def _parse(self, parsedAsmLines):
+        for parsedAsmDict in parsedAsmLines:
+            symbol = parsedAsmDict.get('symbol')
+            commandType = parsedAsmDict.get('commandType')
+            self._preSymbolTable(symbol, commandType)
+            self._updateLineNumber(commandType)
+
+    def _addEntry(self, symbol, address):
         self.symbolDict[symbol] = address
 
-    def addVariableList(self, symbol):
-        self.variableList.append(symbol)
+    def _preSymbolTable(self, symbol, commandType):
+        if not symbol or (symbol in self.symbolDict) or symbol.isdigit():
+            return
 
-    def contains(self, symbol):
-        return symbol in self.symbolDict
+        if commandType == 'L_COMMAND':
+            self.symbolDict[symbol] = self.lineNumber
 
-    def deleteVariableList(self, symbol):
-        if symbol in self.variableList:
-            self.variableList.remove(symbol)
+            if symbol in self.symbolList:
+                self.symbolList.remove(symbol)
+                
+            return
 
-    def getAddress(self, symbol):
-        return self.symbolDict[symbol]
+        if commandType == 'A_COMMAND' and (symbol not in self.symbolList):
+            self.symbolList.append(symbol)
 
-    def getVariableAddress(self):
-        return self.variableAddress
+    def _updateLineNumber(self, commandType):
+        if not commandType == 'L_COMMAND':
+            self.lineNumber += 1
+
+    def _createSymbolTable(self):
+        variableAddress = 16
+
+        for symbol in self.symbolList:
+            self._addEntry(symbol, variableAddress)
+            variableAddress += 1
