@@ -26,8 +26,15 @@ class Parser:
 
     def _parser(self):
         self.parsedAsmLines.append(
-            (self._currentCommand, self._commandType(), self._symbol(), self._dest(),
-             self._comp(), self._jump()))
+            {
+                'currentCommand': self._currentCommand,
+                'commandType': self._commandType(),
+                'symbol': self._symbol(),
+                'dest': self._dest(),
+                'comp': self._comp(),
+                'jump': self._jump()
+            }
+        )
 
     def _hasMoreCommands(self):
         if len(self._commandsList) > 0:
@@ -47,10 +54,10 @@ class Parser:
             return 'C_COMMAND'
 
     def _symbol(self):
-        if self._currentType == 'A_COMMAND':
+        if self._commandType() == 'A_COMMAND':
             return self._currentCommand[1:]
 
-        if self._currentType == 'L_COMMAND':
+        if self._commandType() == 'L_COMMAND':
             return self._currentCommand[1:-1]
 
     def _dest(self):
