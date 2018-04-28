@@ -10,7 +10,7 @@ if __name__ == "__main__":
     filePath = argvs[1]
     outDirName = filePath.split('/')[0]
     outFileName = 'My' + filePath.split('/')[1].split('.')[0]
-    # outFilePath example: max/MyMax.
+    # outFilePath example: max/MyMax.hack
     outFilePath= outDirName + '/' + outFileName + '.hack'
 
     parser = Parser(filePath)
