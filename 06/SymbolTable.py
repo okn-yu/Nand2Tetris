@@ -1,5 +1,4 @@
 class SymbolTable:
-
     def __init__(self, parsedAsmLines):
         self.symbolDict = {
             'SP': 0,
@@ -49,6 +48,7 @@ class SymbolTable:
 
             if symbol in self.symbolList:
                 self.symbolList.remove(symbol)
+                
             return
 
         if commandType == 'A_COMMAND' and (symbol not in self.symbolList):
