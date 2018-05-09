@@ -3,7 +3,7 @@ class CodeWriter:
         self._asmLines = []
 
         # initialized by script.
-        #self._initVirtualSegment()
+        self._initVirtualSegment()
 
         for parsedVMLine in parsedVMLines:
             print(parsedVMLine)
@@ -13,42 +13,85 @@ class CodeWriter:
         self._writeCode(filePath, self._asmLines)
 
     def _initVirtualSegment(self):
-        self._writeVirtualSegment(value=str(256), pointer='SP')
+        # for UT.
+        self._writeVirtualSegment(value=str(256), addr='SP')
+        self._writeVirtualSegment(value=str(300), addr='LCL')
+        self._writeVirtualSegment(value=str(400), addr='ARG')
+        self._writeVirtualSegment(value=str(3000), addr='THIS')
+        self._writeVirtualSegment(value=str(3010), addr='THAT')
 
     def _parse(self, parsedVMLine):
         command = parsedVMLine.get('command')
         commandType = parsedVMLine.get('commandType')
-        arg1 = parsedVMLine.get('arg1')
-        arg2 = parsedVMLine.get('arg2')
+        segment = parsedVMLine.get('arg1')
+        index = parsedVMLine.get('arg2')
 
         if commandType == 'C_PUSH' or commandType == 'C_POP':
-            return self._writePushPop(command, arg1, arg2)
+            return self._writePushPop(command, segment, index)
 
         if commandType == 'C_ARITHMETIC':
             return self._compArithmetic(command)
 
-    def _writePushPop(self, command, arg1, arg2):
+    def _writePushPop(self, command, segment, index):
         if command == 'push':
-            self._push(arg1, arg2)
+            self._push(segment, index)
 
-        # elif command == 'pop':
-        #    self._pop(arg1, arg2) #TODO: Check Code!!
+        elif command == 'pop':
+            self._pop(segment, index)
 
-    def _push(self, arg1, arg2):
-        if arg1 == 'constant':
-            self._writeVirtualSegment(arg2, pointer='SP')
+    def _push(self, segment, index):
+        if segment == 'constant':
+            self._writeVirtualSegment(index, pointer='SP')
             self._incrementSP()
+            return
 
-    '''
-    def _pop(self, arg1, arg2):
-        if arg1 == 'local':
-            self._asmCode('@%s' % arg2, 'D=A', '@LCL', 'A=M+D')
-            self._decrementSP()
-            self._writeDRegister(pointer=str(self.SP))
-            self._asmCode('M=D')
-    '''
+        register = self._conv2Register(segment)
+
+        if segment == 'temp':
+            self._asmCode('@%s' % 'R5')
+        else:
+            self._asmCode('@%s' % register, 'A=M')
+
+        for i in range(int(index)):
+            self._asmCode('A=A+1')
+
+        self._asmCode('D=M')
+        self._asmCode('@SP', 'A=M', 'M=D') # TODO: should use finction!
+        self._incrementSP()
+
+    def _pop(self, segment, index):
+        register = self._conv2Register(segment)
+        self._decrementSP()
+
+        self._asmCode('@SP', 'A=M', 'D=M') # TODO: should use function!
+
+        if segment == 'temp': # R5 value is not Pointer.
+            self._asmCode('@%s' % 'R5')
+        else:
+            self._asmCode('@%s' % register, 'A=M')
+
+        for i in range(int(index)):
+            self._asmCode('A=A+1')
+
+        self._asmCode('M=D')
+
+    def _conv2Register(self, segment):
+
+        if segment == 'local':
+            return 'LCL'
+        elif segment == 'argument':
+            return 'ARG'
+        elif segment == 'this':
+            return 'THIS'
+        elif segment == 'that':
+            return 'THAT'
+        elif segment == 'temp':
+            return 'R5'
+        else:
+            raise RuntimeError('Undefined segment.')
 
     def _compArithmetic(self, command):
+
         if command == 'add':
             self._compBinary('M=M+D')
 
@@ -56,13 +99,13 @@ class CodeWriter:
             self._compBinary('M=M-D')
 
         if command == 'eq':
-            self._judgeBoolean('JEQ')
+            self._isBoolean('JEQ')
 
         if command == 'lt':
-            self._judgeBoolean('JLT')
+            self._isBoolean('JLT')
 
         if command == 'gt':
-            self._judgeBoolean('JGT')
+            self._isBoolean('JGT')
 
         if command == 'neg':
             self._compUnary('M=-D')
@@ -97,7 +140,7 @@ class CodeWriter:
             self._asmCode('@%s' % value, 'D=A')
             self._asmCode('@%s' % pointer, 'A=M', 'M=D')
 
-    def _judgeBoolean(self, jump):
+    def _isBoolean(self, jump):
         # jmp Example: 'JEQ', 'JGT', 'JLT'
         self._compBinary('D=M-D')
         self._decrementSP()
