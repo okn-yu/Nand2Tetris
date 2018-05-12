@@ -6,7 +6,7 @@ class CodeWriter:
     def __init__(self, filePath, parsedVMLines):
 
         # Initialized by script.
-        asm._init_vsgm()
+        #asm._init_vsgm()
 
         for parsedVMLine in parsedVMLines:
             print(parsedVMLine)
@@ -33,4 +33,5 @@ class CodeWriter:
         with open(outFilePath, 'w') as f:
             for line in asmLines:
                 if line:
+                    #print(line)
                     f.write(line + '\n')

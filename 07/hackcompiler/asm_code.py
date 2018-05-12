@@ -12,7 +12,7 @@ class AsmCode:
         AsmCode.inc_sp()
 
     @classmethod
-    def push(cls, sgm, index):
+    def push_from_base_addr(cls, sgm, index):
         AsmCode.set_areg_from_reg('%s' % AsmCode.sgm_2_reg(sgm))  # @Register, A=M
         AsmCode.inc_areg(index)  # Loop: A=A+1
         AsmCode.set_dreg_from_sgm()  # d=M
@@ -21,7 +21,7 @@ class AsmCode:
         AsmCode.inc_sp()  # Mem[SP] = Mem[SP] + 1
 
     @classmethod
-    def push_temp(cls, sgm, index):
+    def push(cls, sgm, index):
         AsmCode.set_areg('%s' % AsmCode.sgm_2_reg(sgm))  # @Register
         AsmCode.inc_areg(index)  # Loop: A=A+1
         AsmCode.set_dreg_from_sgm()  # d=M
@@ -35,7 +35,7 @@ class AsmCode:
     # 3. 対象セグメントに値を設定する //Aレジスタに値を設定する
 
     @classmethod
-    def pop(cls, sgm, index):
+    def pop_from_base_addr(cls, sgm, index):
         AsmCode.dec_sp()  # Mem[SP] = Mem[SP] =1
         AsmCode.set_areg_from_sgm()  # A=M
         AsmCode.set_dreg_from_sgm()  # D=M
@@ -44,7 +44,7 @@ class AsmCode:
         AsmCode.set_sgm_from_dreg()  # M=D
 
     @classmethod
-    def pop_temp(cls, sgm, index):
+    def pop(cls, sgm, index):
         AsmCode.dec_sp()  # A=Mem[SP]
         AsmCode.set_areg_from_sgm()  # A=M
         AsmCode.set_dreg_from_sgm()  # D=M
@@ -154,6 +154,9 @@ class AsmCode:
             return 'R5'
         elif sgm == 'pointer':
             return 'THIS'
+        # static segment begins from 16.
+        elif sgm == 'static':
+            return '16'
         else:
             return None
 
