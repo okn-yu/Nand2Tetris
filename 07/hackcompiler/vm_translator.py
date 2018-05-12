@@ -1,11 +1,11 @@
 # Usage:
 # python -m hackcompiler.VMTranslator MemoryAccess/BasicTest/BasicTest.vm or
-# PYTHONPATH=. python hackcompiler/vmtranslator.py MemoryAccess/BasicTest/BasicTest.vm
+# PYTHONPATH=. python hackcompiler/vm_translator.py MemoryAccess/BasicTest/BasicTest.vm
 
 import sys
 
 from hackcompiler import parser
-from hackcompiler import codewriter
+from hackcompiler import code_writer
 
 if __name__ == "__main__":
     argvs = sys.argv
@@ -13,4 +13,4 @@ if __name__ == "__main__":
     filePath = argvs[1]
 
     parser = parser.Parser(filePath)
-    codewriter.CodeWriter(filePath, parser.parsedVMLines)
+    code_writer.CodeWriter(filePath, parser.parsedVMLines)
