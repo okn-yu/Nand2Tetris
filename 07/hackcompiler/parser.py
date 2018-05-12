@@ -39,7 +39,7 @@ class Parser:
                 self._commandsList.append(command.split())
 
         while True:
-            if self._hasMoreCommands():
+            if self._has_more_commands():
                 self._advance()
                 self._parser()
             else:
@@ -64,7 +64,7 @@ class Parser:
 
         self.parsedVMLines.append(parsedVMDict)
 
-    def _hasMoreCommands(self):
+    def _has_more_commands(self):
         if len(self._commandsList) > 0:
             return True
         else:
