@@ -10,24 +10,14 @@ def write_push_pop(command, sgm, index):
 
 
 def _push(sgm, index):
-    if sgm in ['argument', 'this', 'that', 'local']:
-        asm.push_from_base_addr(sgm, index)
-        return
-
     if sgm == 'constant':
         asm.push_constant(index)
         return
-
-    if sgm in ['temp', 'pointer', 'static']:
+    else:
         asm.push(sgm, index)
         return
 
 
 def _pop(sgm, index):
-    if sgm in ['argument', 'this', 'that', 'local']:
-        asm.pop_from_base_addr(sgm, index)
-        return
-
-    if sgm in ['temp', 'pointer', 'static']:
-        asm.pop(sgm, index)
-        return
+    asm.pop(sgm, index)
+    return

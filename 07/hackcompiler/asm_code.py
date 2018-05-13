@@ -12,17 +12,8 @@ class AsmCode:
         AsmCode.inc_sp()
 
     @classmethod
-    def push_from_base_addr(cls, sgm, index):
-        AsmCode.set_areg_from_reg('%s' % AsmCode.sgm_2_reg(sgm))  # @Register, A=M
-        AsmCode.inc_areg(index)  # Loop: A=A+1
-        AsmCode.set_dreg_from_sgm()  # d=M
-        AsmCode.set_areg_from_reg('SP')  # @SP
-        AsmCode.set_sgm_from_dreg()  # M=D
-        AsmCode.inc_sp()  # Mem[SP] = Mem[SP] + 1
-
-    @classmethod
     def push(cls, sgm, index):
-        AsmCode.set_areg('%s' % AsmCode.sgm_2_reg(sgm))  # @Register
+        AsmCode.set_areg_from_reg('%s' % AsmCode.sgm_2_reg(sgm))
         AsmCode.inc_areg(index)  # Loop: A=A+1
         AsmCode.set_dreg_from_sgm()  # d=M
         AsmCode.set_areg_from_reg('SP')  # @SP
@@ -35,20 +26,11 @@ class AsmCode:
     # 3. 対象セグメントに値を設定する //Aレジスタに値を設定する
 
     @classmethod
-    def pop_from_base_addr(cls, sgm, index):
+    def pop(cls, sgm, index):
         AsmCode.dec_sp()  # Mem[SP] = Mem[SP] =1
         AsmCode.set_areg_from_sgm()  # A=M
         AsmCode.set_dreg_from_sgm()  # D=M
-        AsmCode.set_areg_from_reg('%s' % AsmCode.sgm_2_reg(sgm))  # @Register, A=M
-        AsmCode.inc_areg(index)  # Loop: A=A+1
-        AsmCode.set_sgm_from_dreg()  # M=D
-
-    @classmethod
-    def pop(cls, sgm, index):
-        AsmCode.dec_sp()  # A=Mem[SP]
-        AsmCode.set_areg_from_sgm()  # A=M
-        AsmCode.set_dreg_from_sgm()  # D=M
-        AsmCode.set_areg('%s' % AsmCode.sgm_2_reg(sgm))  # @Register
+        AsmCode.set_areg_from_reg('%s' % AsmCode.sgm_2_reg(sgm))
         AsmCode.inc_areg(index)  # Loop: A=A+1
         AsmCode.set_sgm_from_dreg()  # M=D
 
@@ -93,9 +75,12 @@ class AsmCode:
         AsmCode.append_lines('A=M')
 
     @classmethod
-    def set_areg_from_reg(cls, value):
-        AsmCode.set_areg(value)
-        AsmCode.set_areg_from_sgm()
+    def set_areg_from_reg(cls, reg):
+        if reg in ['ARG', 'THIS', 'THAT', 'LCL', 'SP']:
+            AsmCode.set_areg(reg)
+            AsmCode.set_areg_from_sgm()
+        else:
+            AsmCode.set_areg(reg)
 
     @classmethod
     def inc_areg(cls, index):
@@ -152,9 +137,10 @@ class AsmCode:
             return 'THAT'
         elif sgm == 'temp':
             return 'R5'
+        # pointer segment begins from RAM[3](=THIS).
         elif sgm == 'pointer':
-            return 'THIS'
-        # static segment begins from 16.
+            return '3'
+        # static segment begins from RAM[16].
         elif sgm == 'static':
             return '16'
         else:
