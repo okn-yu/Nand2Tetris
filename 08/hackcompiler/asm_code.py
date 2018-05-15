@@ -113,6 +113,25 @@ class AsmCode:
         AsmCode.set_areg_from_sgm()
         AsmCode.set_sgm_from_dreg()
 
+
+    ### Handle Label. ###
+
+    @classmethod
+    def set_goto(cls, label):
+        AsmCode.set_areg(label)
+        AsmCode.append_lines('0;JMP')
+
+    @classmethod
+    def set_label(cls, label):
+        AsmCode.append_lines('(' + label + ')')
+
+    @classmethod
+    def set_if(cls, label):
+        AsmCode.dec_sp() # SP--
+        AsmCode.st_2_dreg() # A=M, D=A
+        AsmCode.set_goto(label) # A=Label
+        AsmCode.append_lines('D;JGT') # If D=0; then goto label.
+
     ### Other methods. ###
 
     @classmethod

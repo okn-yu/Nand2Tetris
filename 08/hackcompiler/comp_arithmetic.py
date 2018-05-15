@@ -1,7 +1,7 @@
 from hackcompiler.asm_code import AsmCode as asm
 
 
-def comp_arithmetic(command):
+def write_arithmetic(command):
     if command == 'neg':
         return _unary('M=-D')
 
@@ -44,6 +44,7 @@ def _comp(jump):
     asm.append_lines('0;JMP')  # 1Line
     asm.set_bool('TRUE')  # 3Lines
     asm.inc_sp()
+    return
 
 
 def _unary(compute):
@@ -52,6 +53,7 @@ def _unary(compute):
     asm.st_2_dreg()
     asm.append_lines(compute)
     asm.inc_sp()
+    return
 
 
 def _binary(compute):
@@ -62,3 +64,4 @@ def _binary(compute):
     asm.st_2_areg()
     asm.append_lines(compute)
     asm.inc_sp()
+    return

@@ -1,0 +1,1 @@
+from hackcompiler.asm_code import AsmCode as asm
