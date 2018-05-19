@@ -1,39 +1,6 @@
 class AsmCode:
     asmLines = []
 
-    # push処理
-    # 1. 対象セグメントから値を取得する //セグメント依存
-    # 2. スタックの先頭に値を設定する　//共通処理
-    # 3. increment SP　//共通処理
-
-    @classmethod
-    def push_constant(cls, value):
-        AsmCode.set_stack(value)
-        AsmCode.inc_sp()
-
-    @classmethod
-    def push(cls, sgm, index):
-        AsmCode.set_areg_from_reg('%s' % AsmCode.sgm_2_reg(sgm))
-        AsmCode.inc_areg(index)  # Loop: A=A+1
-        AsmCode.set_dreg_from_sgm()  # d=M
-        AsmCode.set_areg_from_reg('SP')  # @SP
-        AsmCode.set_sgm_from_dreg()  # M=D
-        AsmCode.inc_sp()  # Mem[SP] = Mem[SP] + 1
-
-    # pop処理
-    # 1. decrement SP //共通処理
-    # 2. スタックの先頭の値を取得する　//Dレジスタに値を設定する
-    # 3. 対象セグメントに値を設定する //Aレジスタに値を設定する
-
-    @classmethod
-    def pop(cls, sgm, index):
-        AsmCode.dec_sp()  # Mem[SP] = Mem[SP] =1
-        AsmCode.set_areg_from_sgm()  # A=M
-        AsmCode.set_dreg_from_sgm()  # D=M
-        AsmCode.set_areg_from_reg('%s' % AsmCode.sgm_2_reg(sgm))
-        AsmCode.inc_areg(index)  # Loop: A=A+1
-        AsmCode.set_sgm_from_dreg()  # M=D
-
     ### Handle SP. ###
 
     @classmethod
@@ -87,6 +54,16 @@ class AsmCode:
         for i in range(int(index)):
             AsmCode.append_lines('A=A+1')
 
+    @classmethod
+    def dec_areg(cls, index):
+        for i in range(int(index)):
+            AsmCode.append_lines('A=A-1')
+
+    @classmethod
+    def dec_dreg(cls, index):
+        for i in range(int(index)):
+            AsmCode.append_lines('D=D-1')
+
     ### Handle Virtual Regsiters. ###
 
     @classmethod
@@ -113,7 +90,6 @@ class AsmCode:
         AsmCode.set_areg_from_sgm()
         AsmCode.set_sgm_from_dreg()
 
-
     ### Handle Label. ###
 
     @classmethod
@@ -127,10 +103,34 @@ class AsmCode:
 
     @classmethod
     def set_if(cls, label):
-        AsmCode.dec_sp() # SP--
-        AsmCode.st_2_dreg() # A=M, D=A
-        AsmCode.set_goto(label) # A=Label
-        AsmCode.append_lines('D;JGT') # If D=0; then goto label.
+        AsmCode.dec_sp()  # SP--
+        AsmCode.st_2_dreg()  # A=M, D=A
+        AsmCode.set_goto(label)  # A=Label
+        AsmCode.append_lines('D;JGT')  # If D=0; then goto label.
+
+    ### Handle Function. ###
+
+    @classmethod
+    def init_locals(cls, nLocals):
+        for i in nLocals:
+            AsmCode.set_stack('0')
+            AsmCode.inc_sp()
+
+    @classmethod
+    def set_return_segment(cls, seg, index):  # seg=*(FRAME-index)
+        AsmCode.set_areg('FRAME')  # @FRAME
+        AsmCode.set_areg_from_sgm()  # A=M
+        AsmCode.dec_areg(index)  # A=A-index
+        AsmCode.set_dreg_from_sgm()  # D=M
+        AsmCode.set_areg(seg)  # @seg
+        AsmCode.set_sgm_from_dreg()  # M=D
+
+    @classmethod
+    def set_return(cls):
+        AsmCode.set_areg('FRAME')  # @FRAME
+        AsmCode.set_areg_from_sgm()  # A=M
+        AsmCode.dec_areg(5)  # A=A-5
+        AsmCode.set_areg_from_sgm()  # A=M
 
     ### Other methods. ###
 
