@@ -1,5 +1,5 @@
 from hackcompiler.asm_code import AsmCode as asm
-
+from hackcompiler import comp_stack as cs
 
 def write_function(fName, nLocals):
     _function(fName, nLocals)
@@ -10,6 +10,9 @@ def write_return():
     _return()
     return
 
+def write_call(arg1, arg2):
+    _call(arg1, arg2)
+    return
 
 def _function(fName, nLocals):
     asm.set_label(fName)
@@ -48,3 +51,11 @@ def _return():
 
     # goto RET
     asm.set_return()  # TODO: This shold be implemented next!
+
+def _call(fName, nArgs):
+    cs._push('LCL', 0)
+    cs._push('ARG', 0)
+    cs._push('THIS', 0)
+    cs._push('THAT', 0)
+
+    asm.set_goto(fName)

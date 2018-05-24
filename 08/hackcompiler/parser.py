@@ -30,7 +30,7 @@ class Parser:
         self._parse_file_path(filePath)
 
         for lines in self.linesList:
-            print(lines)
+            #print(lines)
             if (lines[0:2] == '//') or (lines == '\r\n') or (lines == '\n'):
                 pass
             else:
@@ -87,7 +87,12 @@ class Parser:
 
         with open(filePath, mode='r') as file:
             lines = file.readlines()
-            self.linesList.extend(lines)
+
+            # Call Sys.init shold be in Mem[0].
+            if 'function Sys.init 0\n' in lines:
+                self.linesList = lines + self.linesList
+            else:
+                self.linesList.extend(lines)
 
     def _open_dir(self, filePath):
         filesList = os.listdir(filePath)

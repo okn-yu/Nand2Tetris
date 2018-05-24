@@ -57,10 +57,11 @@ class CodeWriter:
             sc.write_return()
             return
 
+    # filePath example.
+    # File: FunctionCalls/SimpleFunction/SimpleFunction.vm
+    # Dir: FunctionCalls/SimpleFunction/
     def _write_file(self, filePath):
-        # filePath example.
-        # File: FunctionCalls/SimpleFunction/SimpleFunction.vm
-        # Dir: FunctionCalls/SimpleFunction/
+
         if os.path.isfile(filePath):
             outFilePath = filePath.split('.')[0] + '.' + 'asm'
         elif os.path.isdir(filePath):
