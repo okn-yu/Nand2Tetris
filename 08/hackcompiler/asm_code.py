@@ -130,7 +130,8 @@ class AsmCode:
         AsmCode.set_areg('FRAME')  # @FRAME
         AsmCode.set_areg_from_sgm()  # A=M
         AsmCode.dec_areg(5)  # A=A-5
-        AsmCode.set_areg_from_sgm()  # A=M
+        #AsmCode.set_areg_from_sgm()  # A=M
+        AsmCode.append_lines('0;JMP')
 
     ### Other methods. ###
 
