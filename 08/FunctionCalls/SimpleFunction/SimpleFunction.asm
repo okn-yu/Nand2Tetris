@@ -6,6 +6,13 @@ A=M
 M=D
 @SP
 M=M+1
+@0
+D=A
+@SP
+A=M
+M=D
+@SP
+M=M+1
 @LCL
 A=M
 D=M
@@ -137,4 +144,4 @@ A=A-1
 A=A-1
 A=A-1
 A=A-1
-A=M
+0;JMP

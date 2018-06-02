@@ -10,8 +10,8 @@ from hackcompiler import sub_call as sc
 class CodeWriter:
     def __init__(self, filePath, parsedVMLines):
 
-        # Initialized by script.
-        # asm._init_vsgm()
+        asm._init_vsgm()
+
         for parsedVMLine in parsedVMLines:
             # print(parsedVMLine)
             self._parse(parsedVMLine)
@@ -34,19 +34,26 @@ class CodeWriter:
             return
 
         if commandType == 'C_LABEL':
-            pf.write_label(arg1)
+            if not 'funcName' in locals():
+                self.funcName = None
+
+            pf.write_label(arg1, self.funcName)
             return
 
         if commandType == 'C_GOTO':
-            pf.write_goto(arg1)
+            if not 'funcName' in locals():
+                self.funcName = None
+
+            pf.write_goto(arg1, self.funcName)
             return
 
         if commandType == 'C_IF':
-            pf.write_if(arg1)
+            pf.write_if_goto(arg1)
             return
 
         if commandType == 'C_FUNCTION':
             sc.write_function(arg1, arg2)
+            self.funcName = arg1
             return
 
         if commandType == 'C_CALL':

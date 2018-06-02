@@ -11,7 +11,7 @@ M=M+1
 M=M-1
 A=M
 D=M
-@3
+@THIS
 A=A+1
 M=D
 @0
@@ -92,7 +92,6 @@ M=M-1
 A=M
 D=M
 @COMPUTE_ELEMENT
-0;JMP
 D;JGT
 @END_PROGRAM
 0;JMP
@@ -166,7 +165,7 @@ M=M+1
 M=M-1
 A=M
 D=M
-@3
+@THIS
 A=A+1
 M=D
 @ARG
