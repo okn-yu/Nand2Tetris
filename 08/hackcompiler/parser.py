@@ -30,7 +30,6 @@ class Parser:
         self._parse_file_path(filePath)
 
         for lines in self.linesList:
-            #print(lines)
             if (lines[0:2] == '//') or (lines == '\r\n') or (lines == '\n'):
                 pass
             else:
@@ -47,6 +46,7 @@ class Parser:
 
     def _parser(self):
         parsedVMDict = {
+            'fileName': None,
             'command': None,
             'commandType': None,
             'arg1': None,
@@ -55,11 +55,13 @@ class Parser:
 
         for index, commandElement in enumerate(self._currentCommand):
             if index == 0:
+                parsedVMDict['fileName'] = commandElement
+            if index == 1:
                 parsedVMDict['command'] = commandElement
                 parsedVMDict['commandType'] = commandDict[commandElement]
-            if index == 1:
-                parsedVMDict['arg1'] = commandElement
             if index == 2:
+                parsedVMDict['arg1'] = commandElement
+            if index == 3:
                 parsedVMDict['arg2'] = commandElement
 
         self.parsedVMLines.append(parsedVMDict)
@@ -86,16 +88,34 @@ class Parser:
             return
 
         with open(filePath, mode='r') as file:
-            lines = file.readlines()
+            rawLines = file.readlines()
+
+            fileName = self._get_fileName(filePath)
+            fileLines = self._add_fileName(fileName, rawLines)
+
+            sysLine = fileName + ' ' +  'function Sys.init 0\n'
 
             # Call Sys.init shold be in Mem[0].
-            if 'function Sys.init 0\n' in lines:
-                self.linesList = lines + self.linesList
+            if sysLine in fileLines:
+                self.linesList = fileLines + self.linesList
             else:
-                self.linesList.extend(lines)
+                self.linesList.extend(fileLines)
+
+            print(self.linesList)
 
     def _open_dir(self, filePath):
         filesList = os.listdir(filePath)
 
         for file in filesList:
             self._parse_file_path(filePath + file)
+
+    def _add_fileName(self, fileName, lines):
+
+        for index, line in enumerate(lines):
+            lines[index] = fileName + ' ' + line
+
+        return lines
+
+    def _get_fileName(self, filePath):
+        fileName = filePath.split('/')[-1]
+        return fileName

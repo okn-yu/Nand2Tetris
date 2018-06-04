@@ -19,14 +19,14 @@ class CodeWriter:
         self._write_file(filePath)
 
     def _parse(self, parsedVMLine):
-        print(parsedVMLine)
         command = parsedVMLine.get('command')
         commandType = parsedVMLine.get('commandType')
         arg1 = parsedVMLine.get('arg1')
         arg2 = parsedVMLine.get('arg2')
+        fileName = parsedVMLine.get('fileName')
 
         if commandType == 'C_PUSH' or commandType == 'C_POP':
-            cs.write_push_pop(command, arg1, arg2)
+            cs.write_push_pop(command, arg1, arg2, fileName)
             return
 
         if commandType == 'C_ARITHMETIC':
@@ -79,4 +79,5 @@ class CodeWriter:
         with open(outFilePath, 'w') as f:
             for line in asmLines:
                 if line:
+                    print(line)
                     f.write(line + '\n')

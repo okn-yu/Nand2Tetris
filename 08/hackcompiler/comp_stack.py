@@ -1,11 +1,11 @@
 from hackcompiler.asm_code import AsmCode as asm
 
 
-def write_push_pop(command, sgm, index):
+def write_push_pop(command, sgm, index, fileName):
     if command == 'push':
-        _push_command(sgm, index)
+        _push_command(sgm, index, fileName)
     elif command == 'pop':
-        _pop_command(sgm, index)
+        _pop_command(sgm, index, fileName)
     else:
         # Raise Exception.
         pass
@@ -16,9 +16,12 @@ def write_push_pop(command, sgm, index):
 # 2. スタックの先頭に値を設定する
 # 3. increment SP
 
-def _push_command(sgm, index):
+def _push_command(sgm, index, fileName):
     if sgm == 'constant':
         _push_constant(index)
+        return
+    elif sgm == 'static':
+        _push_static(index, fileName)
         return
     else:
         _push(sgm, index)
@@ -28,6 +31,14 @@ def _push_command(sgm, index):
 def _push_constant(index):
     set_stack(index)
 
+
+def _push_static(index, fileName):
+    variable= fileName + '.' + index
+    asm.set_areg(variable)  # @index
+    asm.set_dreg_from_sgm()  # D=M
+    asm.set_areg_from_reg('SP')  # @SP, A=M
+    asm.set_sgm_from_dreg()  # M=D
+    inc_sp()  # Mem[SP] = Mem[SP] + 1
 
 def _push(sgm, index):
     asm.set_areg_from_reg('%s' % asm.sgm_2_reg(sgm))  # @REGISTER, A=M
@@ -44,10 +55,12 @@ def _push(sgm, index):
 # 3. 対象セグメントに値を設定する
 
 
-def _pop_command(sgm, index):
+def _pop_command(sgm, index, fileName):
     if sgm in ['local', 'argument', 'this', 'that']:
         _pop_2_pointed_mem(sgm, index)
-    else:
+    elif sgm == 'static':
+        _pop_static(sgm, index, fileName)
+    else: # sgm in ['pointer', 'temp']
         _pop_2_mem(sgm, index)
 
 
@@ -58,6 +71,15 @@ def _pop_2_pointed_mem(sgm, index):
     asm.set_areg('%s' % asm.sgm_2_reg(sgm))  # @reg
     asm.set_areg_from_sgm()  # A=M
     asm.inc_areg(index)  # Loop: A=A+1
+    asm.set_sgm_from_dreg()  # M=D
+
+
+def _pop_static(sgm, index, fileName):
+    variable = fileName + '.' + index
+    dec_sp()  # Mem[SP] = Mem[SP] - 1
+    asm.set_areg_from_sgm()  # A=M
+    asm.set_dreg_from_sgm()  # D=M
+    asm.set_areg(variable)    # @XXX.3
     asm.set_sgm_from_dreg()  # M=D
 
 
