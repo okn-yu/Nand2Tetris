@@ -1,7 +1,7 @@
 import os, sys
 
 from jackcompiler import compilation_engine
-from jackcompiler import jack_tokenizer
+from jackcompiler import jack_tokenizer as jt
 from jackcompiler import path_parser as pp
 
 if __name__ == "__main__":
@@ -12,6 +12,5 @@ if __name__ == "__main__":
     pathParser = pp.PathParser(path)
 
     for jackFile in pathParser.jackFilesList:
-        pass
-        # tokens = jack_tokenizer(jackFile)
+        jt.jack_tokenizer(jackFile)
         # compilation_engine(tokens)
