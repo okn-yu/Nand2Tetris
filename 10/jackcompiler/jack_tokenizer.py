@@ -1,13 +1,13 @@
 import os
 
 
-class jack_tokenizer:
+class jackTokenizer:
     def __init__(self, filePath):
 
         self._currentLine = None
         self._currentToken = None
         self._tokensList = []
-        self._XMLTokensList = ['<tokens>\n']
+        self.XMLTokensList = []
         self._tokenize(filePath)
 
         while True:
@@ -17,7 +17,7 @@ class jack_tokenizer:
             else:
                 break
 
-        self._writeXML(filePath)
+        self._write_XML(filePath)
 
     def _tokenize(self, filePath):
 
@@ -52,27 +52,32 @@ class jack_tokenizer:
 
         for line in effectiveLines:
 
-            # divide by dot.
             if '.' in line:
-                line = line.split('.')[0] + ' . ' + line.split('.')[1]
+                line = self._divide_line(line, '.')
 
             if ',' in line:
-                line = line.split(',')[0] + ' , ' + line.split(',')[1]
+                line = self._divide_line(line, ',')
 
             if '(' in line:
-                line = line.split('(')[0] + ' ( ' + line.split('(')[1]
+                line = self._divide_line(line, '(')
 
             if ')' in line:
-                line = line.split(')')[0] + ' ) ' + line.split(')')[1]
+                line = self._divide_line(line, ')')
 
             if '[' in line:
-                line = line.split('[')[0] + ' [ ' + line.split('[')[1]
+                line = self._divide_line(line, '[')
 
             if ']' in line:
-                line = line.split(']')[0] + ' ] ' + line.split(']')[1]
+                line = self._divide_line(line, ']')
+
+            if '{' in line:
+                line = self._divide_line(line, '{')
+
+            if '}' in line:
+                line = self._divide_line(line, '}')
 
             if ';' in line:
-                line = line.split(';')[0] + ' ;'
+                line = self._divide_line(line, ';')
 
             if '<' in line:
                 line = line.replace('<', '&lt;')
@@ -91,6 +96,16 @@ class jack_tokenizer:
 
         print(self._tokensList)
 
+    def _divide_line(self, line, delimiter):
+
+        dividedLines = ''
+
+        for splitedLine in line.split(delimiter):
+            dividedLines += splitedLine
+            dividedLines += ' ' + delimiter + ' '
+
+        return dividedLines[0:-3]
+
     def _has_more_tokens(self):
         if len(self._tokensList) > 0:
             return True
@@ -106,7 +121,8 @@ class jack_tokenizer:
                        'void',
                        'true', 'false', 'null', 'this', 'let', 'do', 'if', 'else', 'while', 'return']
 
-        symbolList = ['{', '}', '(', ')', '[', ']', '.', ',', ';', '+', '-', '*', '/', '&', '|', '&lt;', '&gt;', '=', '~']
+        symbolList = ['{', '}', '(', ')', '[', ']', '.', ',', ';', '+', '-', '*', '/', '&', '|', '&lt;', '&gt;', '=',
+                      '~']
 
         if self._currentToken in keywordList:
             tokenType = 'keyword'
@@ -126,22 +142,23 @@ class jack_tokenizer:
         else:
             print('invalid token!')
 
-        tXMLLine = '<' + tokenType + '> ' + self._currentToken + ' </' + tokenType + '>' + '\n'
+        tXMLLine = '<' + tokenType + '> ' + self._currentToken + ' </' + tokenType + '>'
 
-        self._XMLTokensList.append(tXMLLine)
+        self.XMLTokensList.append(tXMLLine)
         return
 
-    def _writeXML(self, filePath):
+    def _write_XML(self, filePath):
 
         # outFilePath ex: ArrayTest/Main.jack
         outDirPath = filePath.split('/')[0]
         outFileName = filePath.split('/')[1].split('.')[0]
         outFilePath = outDirPath + '/' + 'My' + outFileName + 'T.xml'
 
-        self._XMLTokensList.append('</tokens>')
+        self.XMLTokensList.insert(0, '<tokens>')
+        self.XMLTokensList.append('</tokens>')
 
         with open(outFilePath, 'w') as f:
-            for line in self._XMLTokensList:
+            for line in self.XMLTokensList:
                 if line:
-                    print(line)
-                    f.write(line)
+                    # print(line)
+                    f.write(line + '\r\n')
