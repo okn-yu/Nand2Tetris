@@ -85,6 +85,9 @@ class jackTokenizer:
             if '>' in line:
                 line = line.replace('<', '&gt;')
 
+            if '&' in line:
+                line = line.replace('<', '&amp;')
+
             if '"' in line:
                 splitedLine = (line.split('"'))
                 self._tokensList.extend(splitedLine[0].split())
