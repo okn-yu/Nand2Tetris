@@ -77,7 +77,6 @@ class compilationEngine:
     def _compileSubroutineBody(self, element):
         srBodyElement = ET.SubElement(element, 'subroutineBody')
         while True:
-            print('body')
             tag, text = self._current_element()
             if text == '{':
                 self._add_xml(srBodyElement)
@@ -108,22 +107,16 @@ class compilationEngine:
         while True:
             tag, text = self._current_element()
             if text == 'let':
-                print('let')
                 self._compileLet(varDecElement)
             elif text == 'if':
-                print('if')
                 self._compileIf(varDecElement)
             elif text == 'while':
-                print('while')
                 self._compileWhile(varDecElement)
             elif text == 'do':
-                print('do')
                 self._compileDo(varDecElement)
             elif text == 'return':
-                print('return')
                 self._compileReturn(varDecElement)
             else:
-                print('statements break')
                 break
 
     def _compileDo(self, element):
@@ -164,7 +157,6 @@ class compilationEngine:
                 break
 
     def _compileWhile(self, element):
-        print('while')
         whileElement = ET.SubElement(element, 'whileStatement')
         self._add_xml(whileElement)  # token: 'while'
         self._add_xml(whileElement)  # token: '('
@@ -175,9 +167,13 @@ class compilationEngine:
         self._add_xml(whileElement)  # token: '}'
 
     def _compileReturn(self, element):
-        print('return')
         returnElement = ET.SubElement(element, 'returnStatement')
-        self._add_xml(returnElement)
+        self._add_xml(returnElement)  # 'return'
+        tag, text = self._current_element()
+        if tag == 'integerConstant' or tag == 'stringConstant' \
+                or text in ['+', '-', '*', '/'] or tag == 'identifier':
+            self._compileExpression(returnElement)  # token: expression
+        self._add_xml(returnElement)  # ';'
 
     def _compileIf(self, element):
         ifElement = ET.SubElement(element, 'ifStatement')
@@ -187,17 +183,12 @@ class compilationEngine:
         expElement = ET.SubElement(element, 'expression')
         tag, text = self._current_element()
         self._compileTerm(expElement)  # token: expression
-        print(self._index)
-        print(tag, text)
         while True:
             tag, text = self._current_element()
-            print(self._index, tag, text)
             if text in ['+', '-', '*', '/', '&amp', '|', '<', '>', '=']:
-                print('op')
                 self._add_xml(expElement)  # token: op
                 self._compileTerm(expElement)  # token: term
             else:
-                print('expression break')
                 break
 
     def _compileTerm(self, element):
@@ -238,8 +229,10 @@ class compilationEngine:
             if text == ',':
                 self._add_xml(expListElement)  # token: ','
                 self._compileExpression(expListElement)  # token: expression
-            else:
+            elif tag == 'integerConstant' or tag == 'stringConstant' \
+                    or text in ['+', '-', '*', '/'] or tag == 'identifier':
                 self._compileExpression(expListElement)  # token: expression
+            else:
                 break
 
     def _edit_xml_string(self):
@@ -249,14 +242,11 @@ class compilationEngine:
 
         for line in self._xmlString.split('\n'):
             if '/>' in line:
-                shortTag = line
                 tagName = line.strip()[1:-2]
                 indent = line.split('<')[0]
                 startTag = indent + '<' + tagName + '>' + '\n'
                 endTag = indent + '</' + tagName + '>'
                 self._xmlString = self._xmlString.replace(line, startTag + endTag)
-
-        return self._xmlString
 
     def _write_xml(self):
         self._xmlString = ET.tostring(self._rootElement, "utf-8", short_empty_elements=False)
@@ -266,5 +256,3 @@ class compilationEngine:
         with open('test.xml', 'w') as f:
             f.write(self._xmlString)
 
-        # tree = ET.ElementTree(self._rootElement)
-        # tree.write('test.xml', xml_declaration=None, default_namespace=None, method="xml", short_empty_elements=False)
