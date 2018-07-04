@@ -17,4 +17,4 @@ if __name__ == "__main__":
 
     for jackFile in pathParser.jackFilesList:
         tokenizer = jt.jackTokenizer(jackFile)
-        ce.compilationEngine(tokenizer.XMLTokensList)
+        ce.compilationEngine(tokenizer.outFilePath)

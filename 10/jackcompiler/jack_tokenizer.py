@@ -7,7 +7,8 @@ class jackTokenizer:
         self._currentLine = None
         self._currentToken = None
         self._tokensList = []
-        self.XMLTokensList = []
+        self._xmlTokensList = []
+        self.outFilePath = ''
         self._tokenize(filePath)
 
         while True:
@@ -147,7 +148,7 @@ class jackTokenizer:
 
         tXMLLine = '<' + tokenType + '> ' + self._currentToken + ' </' + tokenType + '>'
 
-        self.XMLTokensList.append(tXMLLine)
+        self._xmlTokensList.append(tXMLLine)
         return
 
     def _write_XML(self, filePath):
@@ -155,13 +156,12 @@ class jackTokenizer:
         # outFilePath ex: ArrayTest/Main.jack
         outDirPath = filePath.split('/')[0]
         outFileName = filePath.split('/')[1].split('.')[0]
-        outFilePath = outDirPath + '/' + 'My' + outFileName + 'T.xml'
+        self.outFilePath = outDirPath + '/' + 'My' + outFileName + 'T.xml'
 
-        self.XMLTokensList.insert(0, '<tokens>')
-        self.XMLTokensList.append('</tokens>')
+        self._xmlTokensList.insert(0, '<tokens>')
+        self._xmlTokensList.append('</tokens>')
 
-        with open(outFilePath, 'w') as f:
-            for line in self.XMLTokensList:
+        with open(self.outFilePath, 'w') as f:
+            for line in self._xmlTokensList:
                 if line:
-                    # print(line)
                     f.write(line + '\r\n')
