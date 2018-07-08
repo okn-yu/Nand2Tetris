@@ -13,7 +13,8 @@ class Code:
             return
 
         if commandType == 'C_COMMAND':
-            binCode = '111' + self._comp(parsedAsmDict.get('comp')) + self._dest(parsedAsmDict.get('dest')) + self._jump(
+            binCode = '111' + self._comp(parsedAsmDict.get('comp')) + self._dest(
+                parsedAsmDict.get('dest')) + self._jump(
                 parsedAsmDict.get('jump'))
 
         if commandType == 'A_COMMAND':

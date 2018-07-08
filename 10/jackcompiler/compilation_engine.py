@@ -7,7 +7,7 @@ from jackcompiler import jack_tokenizer as jt
 class compilationEngine:
 
     def __init__(self, xmlFilePath):
-        # print(xmlFilePath)
+        print(xmlFilePath)
         self._xmlFilePath = xmlFilePath
         self._read_txmlFile()
         self._rootElement = ET.Element('class')
@@ -15,6 +15,7 @@ class compilationEngine:
         self._write_xml()
 
     def _read_txmlFile(self):
+        # print(self._xmlFilePath)
         tree = ET.parse(self._xmlFilePath)
         self._root = tree.getroot()
         self._index = 0
@@ -34,7 +35,7 @@ class compilationEngine:
 
         sub = ET.SubElement(element, tag)
         sub.text = ' ' + text + ' '
-        print(self._index, tag, text)
+        # print(self._index, tag, text)
         self._index += 1
 
     def _compile_class(self):
@@ -185,12 +186,16 @@ class compilationEngine:
 
     def _compileReturn(self, element):
         returnElement = ET.SubElement(element, 'returnStatement')
-        self._add_xml(returnElement)  # 'return'
-        tag, text = self._current_element()
-        if tag == 'integerConstant' or tag == 'stringConstant' \
-                or text in ['+', '-', '*', '/'] or tag == 'identifier':
-            self._compileExpression(returnElement)  # expression
-        self._add_xml(returnElement)  # ';'
+        while True:
+            tag, text = self._current_element()
+            if text == 'return':
+                self._add_xml(returnElement)  # 'return'
+            elif text == ';':
+                self._add_xml(returnElement)  # ';'
+                break
+            else:
+                self._compileExpression(returnElement)  # expression
+
 
     def _compileIf(self, element):
         ifElement = ET.SubElement(element, 'ifStatement')
@@ -233,6 +238,13 @@ class compilationEngine:
             self._add_xml(termElement)
         elif text in ['true', 'false', 'null', 'this']:  # KeywordConstant
             self._add_xml(termElement)
+        elif text in ['-', '~']:
+            self._add_xml(termElement)  # unary OP
+            self._compileTerm(termElement)  # term
+        elif tag ==  'symbol':
+            self._add_xml(termElement) # '('
+            self._compileExpression(termElement) # expression
+            self._add_xml(termElement) # ')'
         elif tag == 'identifier':  # varname
             tag, text = self._next_element()
             if text == '[':
@@ -253,20 +265,22 @@ class compilationEngine:
                 self._compileExpressionList(termElement)  # expressionList
                 self._add_xml(termElement)  # ')'
             else:
-                self._add_xml(termElement)
+                self._add_xml(termElement)  # varName
+
 
     def _compileExpressionList(self, element):
         expListElement = ET.SubElement(element, 'expressionList')
         while True:
             tag, text = self._current_element()
             if text == ',':
-                print(',')
                 self._add_xml(expListElement)  # ','
                 self._compileExpression(expListElement)  # expression
             elif tag == 'integerConstant' or tag == 'stringConstant' \
                     or text in ['true', 'false', 'null', 'this'] \
-                    or text in ['+', '-', '*', '/'] or tag == 'identifier' \
-                    or text in ['-', '~']:
+                    or text in ['+', '-', '*', '/'] \
+                    or tag == 'identifier' \
+                    or text in ['-', '~'] \
+                    or text in ['(']:
                 self._compileExpression(expListElement)  # expression
             else:
                 break

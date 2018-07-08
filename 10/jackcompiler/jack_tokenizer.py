@@ -22,6 +22,7 @@ class jackTokenizer:
 
     def _tokenize(self, filePath):
 
+        print(filePath)
         rawLines = self._read_jack_file(filePath)
         effectiveLines = self._read_jack_line(rawLines)
         self._divide_2_tokens(effectiveLines)
@@ -37,17 +38,24 @@ class jackTokenizer:
 
         for line in rawLines:
 
-            if (line[0:2] == '//') or (line == '\r\n') or (line == '\n') or (line == '\t\n') or (line[0:2] == '/*'):
+            line = line.strip()
+            # TODO: use _remove_comment_line() and _remove_empty_line() !
+            if (line[0:2] == '//') or  (line == '\r\n') or (line == '\n') or (line == '\t\n') or (line[0:3] == '/**') or (line[0:1] == '*'):
                 continue
 
             if '//' in line:
                 line = (line.split('//')[0])  # line: code // comment
 
-            line = line.strip()
-
             effectiveLines.append(line)
+            # print(effectiveLines)
 
         return effectiveLines
+
+    def _remove_comment_line(self):
+        pass
+
+    def _remove_empty_line(self):
+        pass
 
     def _divide_2_tokens(self, effectiveLines):
 
@@ -80,14 +88,20 @@ class jackTokenizer:
             if ';' in line:
                 line = self._divide_line(line, ';')
 
+            if '-' in line:
+                line = self._divide_line(line, '-')
+
+            if '~' in line:
+                line = self._divide_line(line, '~')
+
+            if '&' in line:
+                line = line.replace('&', '&amp;')
+
             if '<' in line:
                 line = line.replace('<', '&lt;')
 
             if '>' in line:
-                line = line.replace('<', '&gt;')
-
-            if '&' in line:
-                line = line.replace('<', '&amp;')
+                line = line.replace('>', '&gt;')
 
             if '"' in line:
                 splitedLine = (line.split('"'))
@@ -98,7 +112,7 @@ class jackTokenizer:
             else:
                 self._tokensList.extend(line.split())
 
-        print(self._tokensList)
+        # print(self._tokensList)
 
     def _divide_line(self, line, delimiter):
 
@@ -122,10 +136,10 @@ class jackTokenizer:
     def _tokenType(self):
 
         keywordList = ['class', 'constructor', 'function', 'method', 'field', 'static', 'var', 'int', 'char', 'boolean',
-                       'void',
-                       'true', 'false', 'null', 'this', 'let', 'do', 'if', 'else', 'while', 'return']
+                       'void', 'true', 'false', 'null', 'this', 'let', 'do', 'if', 'else', 'while', 'return']
 
-        symbolList = ['{', '}', '(', ')', '[', ']', '.', ',', ';', '+', '-', '*', '/', '&', '|', '&lt;', '&gt;', '=',
+        symbolList = ['{', '}', '(', ')', '[', ']', '.', ',', ';', '+', '-', '*', '/', '&amp;', '|', '&lt;', '&gt;',
+                      '=',
                       '~']
 
         if self._currentToken in keywordList:
