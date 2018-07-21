@@ -16,8 +16,8 @@ if __name__ == "__main__":
 
     for jackFile in pathParser.jackFilesList:
         tokenizer = jt.jackTokenizer(jackFile)          # input:xxx.jack File. output:xxxT.xml File.
-        ce.compilationEngine(tokenizer.outFilePath)     # input:xxxT.xml File. output:xxx.xml File.
-        # st.symbol_table()
+        compEngine = ce.compilationEngine(tokenizer.outFilePath)     # input:xxxT.xml File. output:xxx.xml File.
+        st.SymbolTable(compEngine.outFilePath)
 
     # jackTokenizer()       # input:xxx.jack File. output:xxxT.xml File.
     # compilationEngine()   # input:xxxT.xml File. output:xxx.xml File.

@@ -1,10 +1,30 @@
+import xml.etree.ElementTree as ET
+import xml.dom.minidom as minidom
+
 class SymbolTable:
 
-    def __init__(self):
-        pass
+    def __init__(self, filePath):
 
-        self.classSTable = {}
-        self.subroutineSTable = {}
+        print('SymbolTable...%s' % filePath)
+        self._xmlFilePath = filePath
+
+        self._read_txmlFile()
+        self._find_variables()
+
+        # self.classSTable = {}
+        # self.subroutineSTable = {}
+
+    def _read_txmlFile(self):
+        # print(self._xmlFilePath)
+        tree = ET.parse(self._xmlFilePath)
+        self._root = tree.getroot()
+
+    def _find_variables(self):
+        for e in self._root.iter('identifier'):
+            if e.attrib:
+                print(e.tag, e.text)
+
+        # print(self._root.findall('identifier'))
 
     def define(self, name, type, kind):
         pass

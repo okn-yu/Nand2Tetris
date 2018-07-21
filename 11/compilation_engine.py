@@ -8,8 +8,7 @@ class compilationEngine:
 
     def __init__(self, xmlFilePath):
 
-        self.variable_type = None
-        self.variable_kind = None
+        self.outFilePath = ''
 
         print(xmlFilePath)
         self._xmlFilePath = xmlFilePath
@@ -88,17 +87,17 @@ class compilationEngine:
 
     def _compileClassVarDec(self, element):
         clsVarDecElement = ET.SubElement(element, 'classVarDec')
-        variable_kind = self._variable_kind()
-        variable_type = self._variable_type()
+        _variable_kind = self._variable_kind()
+        _variable_type = self._variable_type()
         while True:
             tag, text = self._current_element()
             if text == 'static' or text == 'field':
                 self._add_xml(clsVarDecElement)  # 'static' or 'field'
                 self._add_xml(clsVarDecElement)  # type
-                self._add_xml(clsVarDecElement, kind=variable_kind, type=variable_type)  # varName
+                self._add_xml(clsVarDecElement, kind=_variable_kind, type=_variable_type)  # varName
             elif text == ',':
                 self._add_xml(clsVarDecElement)  # ','
-                self._add_xml(clsVarDecElement, kind=variable_kind, type=variable_type)  # varName
+                self._add_xml(clsVarDecElement, kind=_variable_kind, type=_variable_type)  # varName
             elif text == ';':
                 self._add_xml(clsVarDecElement)  # ';'
                 break
@@ -124,10 +123,10 @@ class compilationEngine:
                 self._add_xml(paramListElement)  # type
                 self._add_xml(paramListElement, kind='Argument', type=text)  # varName
             elif text == ',':
-                variable_type = self._variable_type()
+                _variable_type = self._variable_type()
                 self._add_xml(paramListElement)  # ','
                 self._add_xml(paramListElement)  # type
-                self._add_xml(paramListElement, kind='Argument', type=variable_type)  # varName
+                self._add_xml(paramListElement, kind='Argument', type=_variable_type)  # varName
             else:
                 break
 
@@ -146,20 +145,20 @@ class compilationEngine:
 
     def _compileVarDec(self, element):
         varDecElement = ET.SubElement(element, 'varDec')
-        variable_kind = self._variable_kind()
-        variable_type = self._variable_type()
+        _variable_kind = self._variable_kind()
+        _variable_type = self._variable_type()
         while True:
             tag, text = self._current_element() # kind = text
             if text == ',':
                 self._add_xml(varDecElement) # ','
-                self._add_xml(varDecElement, kind=variable_kind, type=variable_type) # varName
+                self._add_xml(varDecElement, kind=_variable_kind, type=_variable_type) # varName
             elif text == ';':
                 self._add_xml(varDecElement) # ';'
                 break
             else:
                 self._add_xml(varDecElement) # var
                 self._add_xml(varDecElement) # type
-                self._add_xml(varDecElement, kind=variable_kind, type=variable_type) # varName
+                self._add_xml(varDecElement, kind=_variable_kind, type=_variable_type) # varName
 
     def _compileStatements(self, element):
         statementsElement = ET.SubElement(element, 'statements')
@@ -343,9 +342,9 @@ class compilationEngine:
         self._xmlString = ET.tostring(self._rootElement, "utf-8", short_empty_elements=False)
         self._edit_xml_string()
 
-        outDirPath = self._xmlFilePath.split('/')[0]  # ex: ArrayTest/MyMainT.xml -> ArrayTest
-        outFileName = self._xmlFilePath.split('/')[1].split('.')[0][0:-1]  # ex: ArrayTest/MyMainT.xml -> MyMain
-        outFilePath = outDirPath + '/' + outFileName + '.xml'  # ex: ArrayTest/MyMain.xml
+        outDirPath = self._xmlFilePath.split('/')[0]                        # ex: ArrayTest/MyMainT.xml -> ArrayTest
+        outFileName = self._xmlFilePath.split('/')[1].split('.')[0][0:-1]   # ex: ArrayTest/MyMainT.xml -> MyMain
+        self.outFilePath = outDirPath + '/' + outFileName + '.xml'          # ex: ArrayTest/MyMain.xml
 
-        with open(outFilePath, 'w') as f:
+        with open(self.outFilePath, 'w') as f:
             f.write(self._xmlString)
