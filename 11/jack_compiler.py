@@ -4,6 +4,7 @@ import compilation_engine as ce
 import jack_tokenizer as jt
 import path_parser as pp
 import symbol_table as st
+import vm_writer as vw
 
 # Usage: python -m jack_compiler Average
 
@@ -17,7 +18,8 @@ if __name__ == "__main__":
     for jackFile in pathParser.jackFilesList:
         tokenizer = jt.jackTokenizer(jackFile)          # input:xxx.jack File. output:xxxT.xml File.
         compEngine = ce.compilationEngine(tokenizer.outFilePath)     # input:xxxT.xml File. output:xxx.xml File.
-        st.SymbolTable(compEngine.outFilePath)
+        symTable = st.SymbolTable(compEngine.outFilePath)
+        vw.VMWriter(compEngine.outFilePath)
 
     # jackTokenizer()       # input:xxx.jack File. output:xxxT.xml File.
     # compilationEngine()   # input:xxxT.xml File. output:xxx.xml File.

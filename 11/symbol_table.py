@@ -6,31 +6,39 @@ class SymbolTable:
     def __init__(self, filePath):
 
         print('SymbolTable...%s' % filePath)
+
+        self.classTable = {}                                        # classTable['name'] = ('kind', 'type', index)
+        self.classIndex = 0
+        self.subroutineTable = {}                                   # classTable['name'] = ('kind', 'type', index)
+        self.subroutineIndex = 0
+        self.symbolTable = [self.classTable, self.subroutineTable]  # symbolTable = [classTable, symbolTable]
+
         self._xmlFilePath = filePath
-
         self._read_txmlFile()
-        self._find_variables()
+        self.define()
 
-        # self.classSTable = {}
-        # self.subroutineSTable = {}
 
     def _read_txmlFile(self):
         # print(self._xmlFilePath)
         tree = ET.parse(self._xmlFilePath)
         self._root = tree.getroot()
 
-    def _find_variables(self):
+    def define(self):
         for e in self._root.iter('identifier'):
             if e.attrib:
-                print(e.tag, e.text)
+                name = e.text
+                kind = e.attrib['kind']
+                type = e.attrib['type']
 
-        # print(self._root.findall('identifier'))
+                if kind == 'var':
+                    self.subroutineTable[name] = (kind, type, self.subroutineIndex)
+                    self.subroutineIndex += 1
 
-    def define(self, name, type, kind):
-        pass
+                if kind == 'field':
+                    self.classTable[name] = (kind, type, self.classIndex)
+                    self.classIndex += 1
 
-        # symbolTable[name] = (type, kind, index)
-        # ex. var int length;  -> symbolTable{'a': ('int', 'var', 0)}
+        print(self.symbolTable)
 
     def var_count(self, kind):
         pass

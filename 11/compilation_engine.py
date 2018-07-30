@@ -12,6 +12,8 @@ class compilationEngine:
 
         print(xmlFilePath)
         self._xmlFilePath = xmlFilePath
+        self.className = ''
+
         self._read_txmlFile()
         self._rootElement = ET.Element('class')
         self._compile_class()
@@ -33,10 +35,10 @@ class compilationEngine:
         text = self._root[self._index + 1].text.strip()
         return tag, text
 
-    def _variable_kind(self):
+    def _current_text(self):
         return self._root[self._index].text.strip()
 
-    def _variable_type(self):
+    def _next_text(self):
         return self._root[self._index + 1].text.strip()
 
     def _add_xml(self, element, kind=None, type=None):
@@ -56,21 +58,6 @@ class compilationEngine:
         # print(self._index, tag, text)
         self._index += 1
 
-    # def _set_attribute_(self, element, tag, text):
-    #
-    #     print('element.tag...%s' % element.tag)
-    #
-    #     if element.tag != 'varDec':
-    #         return
-    #
-    #     # kinds: static, field, arg, var, none
-    #     if text in ['static', 'field', 'var']:
-    #         self.kind = text
-    #
-    #     # types: int, char, boolean, className
-    #     if tag == 'keyword' and text in ['int', 'char', 'boolean']:
-    #         self.type = text
-
     def _compile_class(self):
 
         while True:
@@ -79,16 +66,19 @@ class compilationEngine:
                 self._compileClassVarDec(self._rootElement)
             elif text in ['constructor', 'function', 'method']:
                 self._compileSubroutine(self._rootElement)
-            elif text == '}':
+            elif text == '}': # '}'
                 self._add_xml(self._rootElement)
                 break
             else:
-                self._add_xml(self._rootElement)
+                self.className = self._next_text()
+                self._add_xml(self._rootElement)    # 'class'
+                self._add_xml(self._rootElement)    # className
+                self._add_xml(self._rootElement)    # '{'
 
     def _compileClassVarDec(self, element):
         clsVarDecElement = ET.SubElement(element, 'classVarDec')
-        _variable_kind = self._variable_kind()
-        _variable_type = self._variable_type()
+        _variable_kind = self._current_text()
+        _variable_type = self._next_text()
         while True:
             tag, text = self._current_element()
             if text == 'static' or text == 'field':
@@ -123,7 +113,7 @@ class compilationEngine:
                 self._add_xml(paramListElement)  # type
                 self._add_xml(paramListElement, kind='Argument', type=text)  # varName
             elif text == ',':
-                _variable_type = self._variable_type()
+                _variable_type = self._next_text()
                 self._add_xml(paramListElement)  # ','
                 self._add_xml(paramListElement)  # type
                 self._add_xml(paramListElement, kind='Argument', type=_variable_type)  # varName
@@ -139,14 +129,14 @@ class compilationEngine:
             elif text == 'var':
                 self._compileVarDec(srBodyElement)
             else:
-                self._compileStatements(srBodyElement)  # statements
-                self._add_xml(srBodyElement)  # '}'
+                self._compileStatements(srBodyElement) # statements
+                self._add_xml(srBodyElement) # '}'
                 break
 
     def _compileVarDec(self, element):
         varDecElement = ET.SubElement(element, 'varDec')
-        _variable_kind = self._variable_kind()
-        _variable_type = self._variable_type()
+        _variable_kind = self._current_text()
+        _variable_type = self._next_text()
         while True:
             tag, text = self._current_element() # kind = text
             if text == ',':
