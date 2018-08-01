@@ -10,7 +10,6 @@ class VMWriter:
         print('VMWriter:' + xmlFilePath)
 
         self._xmlFilePath = xmlFilePath
-        self._vmLines = []
         self.className = ''
 
         self._read_txmlFile()
@@ -43,7 +42,14 @@ class VMWriter:
 
 
 class ClassVarDec:
-    pass
+
+    def __init__(self):
+        pass
+
+    # classVarDec tokens.
+    # ( 'static' | 'field' ) type varName ( ',' varName )* ';'
+    def _compile_class_var_dec(self):
+        pass
 
 class Subroutine:
 
@@ -52,10 +58,8 @@ class Subroutine:
         self._className = className
         self._subroutineName = ''
         self._localVarCount = 0
-        self._vmLines = []
 
         self._compile_subroutine_dec(tree)
-        self._write_file()
 
     def _compile_class_var_dec(self, tree):
         print(tree)
@@ -74,10 +78,16 @@ class Subroutine:
                 print('subroutineName...%s' % self._subroutineName)
 
             if tag == 'subroutineBody':
+                l =(child_tree.iter())
+                for a in l:
+                    print(a.tag)
+                #print(next(l))
+                #print(hoge.__next__())
+                #print(hoge.__next__())
                 self._compile_subroutine_body(child_tree)
 
-        self._vmLines.insert(0, ('function ' + self._className + '.' + self._subroutineName + ' ' + str(self._localVarCount)))
-        self._vmLines.append('return')
+        self._write_file('function ' + self._className + '.' + self._subroutineName + ' ' + str(self._localVarCount))
+        self._write_file('return')
         print('end compile_subroutine_dec')
 
     # subroutineBody tokens:
@@ -148,7 +158,7 @@ class Subroutine:
                     className = text
                 else:
                     subroutineName = text
-                    self._vmLines.append('call' + ' ' + className + '.' + subroutineName)
+                    self._write_file('call' + ' ' + className + '.' + subroutineName)
 
             if tag == 'expressionList':
                 self._compile_expression_list(child_tree)
@@ -169,11 +179,49 @@ class Subroutine:
     def _compile_expression(self, tree):
         print('compile_expression')
 
+        leftLeaf = tree[0]
+        assert leftLeaf.tag == 'term'
+
+        node = tree[1]
+        assert node.tag == 'symbol'
+
+        rightLeaf = tree[2]
+        assert rightLeaf.tag == 'term'
+
+        self._compile_term(leftLeaf)
+        self._compile_term(rightLeaf)
+        self._compile_op(node)
+
+    def _compile_op(self, tree):
+        print('compile_op')
+
+        operator = tree.text.strip()
+
+        if operator == '+':
+            self._write_file('add')
+
+        elif operator == '*':
+            self._write_file('mult')
+
+
+    # symbol tokens:
+    # integerConstant | stringConstant | keywordConstant | varName | varName '[' expression ']' | subroutineCall |\
+    #  '(' expression ')' | unaryOp term
+    def _compile_term(self, tree):
+        print('compile_term')
+
         # in case of 'term' 'symbol' 'term'
         for child_tree in tree:
             tag, text = child_tree.tag.strip(), child_tree.text.strip()
 
+            if tag == 'integerConstant':
+                self._write_file('push' + ' ' + text)
 
+            elif tag == 'stringConstant':
+                self._write_file('push' + ' ' + text)
+
+            elif tag == 'expression':
+                self._compile_expression(child_tree)
 
     def write_push(self):
         pass
@@ -202,15 +250,13 @@ class Subroutine:
     def write_return(self):
         pass
 
-    def _write_file(self):
+    def _write_file(self, line):
 
         # if os.path.isfile(filePath):
         #     outFilePath = filePath.split('.')[0] + '.' + 'asm'
         # elif os.path.isdir(filePath):
         #     outFilePath = filePath + filePath.split('/')[-2] + '.' + 'asm'
 
-        # self._vmLines = ['test']
-
-        with open('test.vm', 'w') as f:
-            for line in self._vmLines:
-                f.write(line + '\n')
+        with open('test.vm', 'a') as f:
+            print('code: %s' % line)
+            f.write(line + '\n')
