@@ -69,26 +69,43 @@ class Subroutine:
     def _compile_subroutine_dec(self, tree):
         print('start compile_subroutine_dec')
 
-        for index, child_tree in enumerate(tree):
-            tag, text = child_tree.tag.strip(), child_tree.text.strip()
-            print(' elem: subroutinedec tag: %s text: %s' % (tag, text))
+        # print(tree) # <Element 'subroutineDec' at 0x10fd59e58>
+        iter_tree = tree.iter()
+        # print(next(iter_tree)) # <Element 'subroutineDec' at 0x10fd59e58>
 
-            if index == 2:
-                self._subroutineName = text
-                print('subroutineName...%s' % self._subroutineName)
+        assert next(iter_tree).tag == 'subroutineDec'
+        assert next(iter_tree).text.strip() in ['constructor', 'function', 'method']
+        assert next(iter_tree).tag == 'keyword'
+        self.subroutineName = next(iter_tree).text
+        assert next(iter_tree).text.strip() == '('
+        self._compile_parameter_list(next(iter_tree))
+        assert next(iter_tree).text.strip() == ')'
+        self._compile_subroutine_body(next(iter_tree))
 
-            if tag == 'subroutineBody':
-                l =(child_tree.iter())
-                for a in l:
-                    print(a.tag)
-                #print(next(l))
-                #print(hoge.__next__())
-                #print(hoge.__next__())
-                self._compile_subroutine_body(child_tree)
+        #print(next(next2))
+       # for index, child_tree in enumerate(tree):
+        #     tag, text = child_tree.tag.strip(), child_tree.text.strip()
+        #     print(' elem: subroutinedec tag: %s text: %s' % (tag, text))
+        #
+        #     if index == 2:
+        #         self._subroutineName = text
+        #         print('subroutineName...%s' % self._subroutineName)
+        #
+        #     if tag == 'subroutineBody':
+        #         l =(child_tree.(iter))
+        #         for a in l:
+        #             print(a.tag)
+        #         #print(next(l))
+        #         #print(hoge.__next__())
+        #         #print(hoge.__next__())
+        #         self._compile_subroutine_body(child_tree)
+        #
+        # self._write_file('function ' + self._className + '.' + self._subroutineName + ' ' + str(self._localVarCount))
+        # self._write_file('return')
+        # print('end compile_subroutine_dec')
 
-        self._write_file('function ' + self._className + '.' + self._subroutineName + ' ' + str(self._localVarCount))
-        self._write_file('return')
-        print('end compile_subroutine_dec')
+    def _compile_parameter_list(self, tree):
+        pass
 
     # subroutineBody tokens:
     # '{' varDec* statements* '}'
