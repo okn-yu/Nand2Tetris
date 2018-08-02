@@ -1,7 +1,8 @@
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 
-OSVMFILES = ['Array', 'Keyboard', 'Math', 'Memory', 'Output', 'Screen', 'String', 'Sys']
+OS_FILES = ['Array', 'Keyboard', 'Math', 'Memory', 'Output', 'Screen', 'String', 'Sys']
+
 
 class VMWriter:
 
@@ -10,31 +11,41 @@ class VMWriter:
         print('VMWriter:' + xmlFilePath)
 
         self._xmlFilePath = xmlFilePath
-        self.className = ''
+        self._fileName = ''
+
+        self._get_fileName()
 
         self._read_txmlFile()
         self._compile_class()
         # self._write_file()
 
     def _read_txmlFile(self):
-        # print(self._xmlFilePath)
+
         tree = ET.parse(self._xmlFilePath)
         self._root = tree.getroot()
+
+    def _get_fileName(self):
+
+        if '/' in self._xmlFilePath:
+            self._fileName = self._xmlFilePath.split('/')[-1]
+        else:
+            self._fileName = self._xmlFilePath
 
     # class tokens:
     # 'class' className '{' classVarDec* subroutineDec* '}'
     def _compile_class(self):
-        # assert self._root.tag == 'class'
-        # assert self._root[0].text.strip() == 'class'
+
+        iter_tree = self._root.iter()
+        classElm = next(iter_tree)
+        assert classElm.tag == 'class'
 
         print('start compile_class')
 
-        self.className = self._root[1].text.strip()
-
-        for child_tree in self._root:
+        for child_tree in classElm:
+            if child_tree.tag == 'identifier':
+                self.className = child_tree.text.strip()
             if child_tree.tag == 'classVarDec':
-                # self._compile_class_var_dec(child_tree)
-                pass
+                ClassVarDec(child_tree)
             if child_tree.tag == 'subroutineDec':
                 Subroutine(child_tree, self.className)
 
@@ -43,7 +54,7 @@ class VMWriter:
 
 class ClassVarDec:
 
-    def __init__(self):
+    def __init__(self, tree):
         pass
 
     # classVarDec tokens.
@@ -51,58 +62,57 @@ class ClassVarDec:
     def _compile_class_var_dec(self):
         pass
 
+
 class Subroutine:
 
-    def __init__(self, tree, className):
+    def __init__(self, tree, fileName):
 
-        self._className = className
+        self._vmLines = []
+        self._fileName = fileName
         self._subroutineName = ''
         self._localVarCount = 0
 
         self._compile_subroutine_dec(tree)
 
-    def _compile_class_var_dec(self, tree):
-        print(tree)
+        self._write_file()
 
     # subroutine token:
     # ('constructor' | 'function' | 'method') ('void' | type) subroutineName '(' parameterList ')' subrutineBody
     def _compile_subroutine_dec(self, tree):
+
         print('start compile_subroutine_dec')
 
-        # print(tree) # <Element 'subroutineDec' at 0x10fd59e58>
         iter_tree = tree.iter()
+        # print(tree) # <Element 'subroutineDec' at 0x10fd59e58>
         # print(next(iter_tree)) # <Element 'subroutineDec' at 0x10fd59e58>
 
-        assert next(iter_tree).tag == 'subroutineDec'
-        assert next(iter_tree).text.strip() in ['constructor', 'function', 'method']
-        assert next(iter_tree).tag == 'keyword'
-        self.subroutineName = next(iter_tree).text
-        assert next(iter_tree).text.strip() == '('
-        self._compile_parameter_list(next(iter_tree))
-        assert next(iter_tree).text.strip() == ')'
-        self._compile_subroutine_body(next(iter_tree))
+        subroutineElm = next(iter_tree)
+        assert subroutineElm.tag == 'subroutineDec'
 
-        #print(next(next2))
-       # for index, child_tree in enumerate(tree):
-        #     tag, text = child_tree.tag.strip(), child_tree.text.strip()
-        #     print(' elem: subroutinedec tag: %s text: %s' % (tag, text))
-        #
-        #     if index == 2:
-        #         self._subroutineName = text
-        #         print('subroutineName...%s' % self._subroutineName)
-        #
-        #     if tag == 'subroutineBody':
-        #         l =(child_tree.(iter))
-        #         for a in l:
-        #             print(a.tag)
-        #         #print(next(l))
-        #         #print(hoge.__next__())
-        #         #print(hoge.__next__())
-        #         self._compile_subroutine_body(child_tree)
-        #
-        # self._write_file('function ' + self._className + '.' + self._subroutineName + ' ' + str(self._localVarCount))
-        # self._write_file('return')
-        # print('end compile_subroutine_dec')
+        kwElm = next(iter_tree)
+        assert kwElm.text.strip() in ['constructor', 'function', 'method']
+
+        kwElm = next(iter_tree)
+        assert kwElm.tag == 'keyword'
+
+        subroutineNameElm = next(iter_tree)
+        assert subroutineNameElm.tag == 'identifier'
+
+        symElm = next(iter_tree)
+        assert symElm.text.strip() == '('
+
+        paramListElm = next(iter_tree)
+        assert paramListElm.tag == 'parameterList'
+
+        symElm = next(iter_tree)
+        assert symElm.text.strip() == ')'
+
+        subroutineBodyElm = next(iter_tree)
+        assert subroutineBodyElm.tag == 'subroutineBody'
+
+        self._subroutineName = subroutineNameElm.text.strip()
+        self._compile_parameter_list(paramListElm)
+        self._compile_subroutine_body(subroutineBodyElm)
 
     def _compile_parameter_list(self, tree):
         pass
@@ -113,10 +123,9 @@ class Subroutine:
         print('compile_subroutine_body')
 
         for child_tree in tree:
-            tag, text = child_tree.tag.strip(), child_tree.text.strip()
+            tag, text = child_tree.tag, child_tree.text.strip()
 
-            if tag =='varDec':
-                print('varDec...%s' % tag)
+            if tag == 'varDec':
                 self._compile_var_dec(child_tree)
 
             if tag == 'statements':
@@ -130,7 +139,7 @@ class Subroutine:
         self._localVarCount += 1
 
         for child_tree in tree:
-            text = child_tree.tag.strip(), child_tree.text.strip()
+            text = child_tree.tag, child_tree.text.strip()
             if text == ',':
                 self._localVarCount += 1
 
@@ -140,140 +149,159 @@ class Subroutine:
         print('compile_statements')
 
         for child_tree in tree:
-            tag, text = child_tree.tag.strip(), child_tree.text.strip()
+            tag, text = child_tree.tag, child_tree.text.strip()
             if tag == 'doStatement':
-                self._compile_do_statement(tree)
-
+                self._compile_do_statement(child_tree)
 
     # doStatement tokens:
     # 'do' subroutineCall ';'
     def _compile_do_statement(self, tree):
         print('compile_do_statement')
 
-        for child_tree in tree:
-            tag, text = child_tree.tag.strip(), child_tree.text.strip()
-            if tag == 'do':
-                continue
-            else:
-                self._compile_subroutine_call(child_tree)
-                break
+        iter_tree = tree.iter()
+
+        doStatementElm = next(iter_tree)
+        assert doStatementElm.tag == 'doStatement'
+
+        doElm = next(iter_tree)
+        assert doElm.text.strip() == 'do'
+
+        self._compile_subroutine_call(iter_tree)
 
     # subroutineCall tokens:
-    # subroutineName '(' expressionList ')' | (className | varName) '.' subroutineName '(' expressionList ')'
-    def _compile_subroutine_call(self, tree):
+    # subroutineName '(' expressionList ')' ';' | (className | varName) '.' subroutineName '(' expressionList ')' ';'
+    def _compile_subroutine_call(self, iter_tree):
         print('compile_subroutine_call')
 
-        subroutineName = ''
-        className = ''
-        argument = ''
+        calleeName = next(iter_tree).text.strip()
+        symbol = next(iter_tree).text.strip()
 
-        for child_tree in tree:
-            tag, text = child_tree.tag.strip(), child_tree.text.strip()
+        if symbol == '(':
+            self._write_call(calleeName)
+        elif symbol == '.':
+            calleeName += symbol
+            calleeName += next(iter_tree).text.strip()
+            self._write_call(calleeName)
+            next(iter_tree)
 
-            if tag == 'identifier':
-                if text in OSVMFILES:
-                    className = text
-                else:
-                    subroutineName = text
-                    self._write_file('call' + ' ' + className + '.' + subroutineName)
-
-            if tag == 'expressionList':
-                self._compile_expression_list(child_tree)
+        expressionListElm = next(iter_tree)
+        assert expressionListElm.tag == 'expressionList'
+        self._compile_expression_list(expressionListElm)
 
     # expressionList tokens:
     # (expression (',' expression)* )?
     def _compile_expression_list(self, tree):
-        print('compile_expression_list')
+        print('start compile_expression_list')
+
+        print(tree)
 
         for child_tree in tree:
-            tag, text = child_tree.tag.strip(), child_tree.text.strip()
+            tag, text = child_tree.tag, child_tree.text.strip()
 
             if tag == 'expression':
                 self._compile_expression(child_tree)
 
+        print('end compile_expression_list')
+
     # expression tokens:
     # term (op term)*
     def _compile_expression(self, tree):
-        print('compile_expression')
+        print('start compile_expression')
 
-        leftLeaf = tree[0]
-        assert leftLeaf.tag == 'term'
+        termList = []
+        opList = []
 
-        node = tree[1]
-        assert node.tag == 'symbol'
+        for child_tree in tree:
+            if child_tree.tag == 'term':
+                termList.append(child_tree)
 
-        rightLeaf = tree[2]
-        assert rightLeaf.tag == 'term'
+            elif child_tree.tag == 'symbol':
+                opList.append(child_tree)
 
-        self._compile_term(leftLeaf)
-        self._compile_term(rightLeaf)
-        self._compile_op(node)
+        print('termList: %s' % termList)
+        for term in termList:
+            self._compile_term(term)
+
+        print('opList: %s' % opList)
+        for op in reversed(opList):
+            self._compile_op(op)
+
+        print('end compile_expression')
 
     def _compile_op(self, tree):
-        print('compile_op')
+        print('start compile_op')
 
         operator = tree.text.strip()
+        print('operator: %s' % operator)
+        assert operator in ['+', '-', '*', '/']
 
-        if operator == '+':
-            self._write_file('add')
+        self._write_arithmetic(operator)
 
-        elif operator == '*':
-            self._write_file('mult')
-
+        print('end compile_op')
 
     # symbol tokens:
     # integerConstant | stringConstant | keywordConstant | varName | varName '[' expression ']' | subroutineCall |\
     #  '(' expression ')' | unaryOp term
     def _compile_term(self, tree):
-        print('compile_term')
+        print('start compile_term')
+        print('term: %s' % tree)
 
         # in case of 'term' 'symbol' 'term'
         for child_tree in tree:
-            tag, text = child_tree.tag.strip(), child_tree.text.strip()
+            tag, text = child_tree.tag, child_tree.text.strip()
+            # print(tag, text)
 
             if tag == 'integerConstant':
-                self._write_file('push' + ' ' + text)
+                print('integer: %s' % text)
+                self._write_push('constant', text)
 
             elif tag == 'stringConstant':
-                self._write_file('push' + ' ' + text)
+                self._write_push('constant', text)
 
             elif tag == 'expression':
                 self._compile_expression(child_tree)
 
-    def write_push(self):
+        print('end compile_term')
+
+    def _write_push(self, type, var):
+
+        self._vmLines.append('push' + ' ' + type + ' ' + var)
+
+    def _write_pop(self):
         pass
 
-    def write_pop(self):
+    def _write_arithmetic(self, operator):
+
+        if operator == '+':
+            self._vmLines.append('add')
+
+        elif operator == '*':
+            self._vmLines.append('mult')
+
+    def _write_label(self):
         pass
 
-    def write_arithmetic(self):
+    def _write_goto(self):
         pass
 
-    def write_label(self):
+    def _write_if(self):
         pass
 
-    def write_goto(self):
-        pass
+    def _write_call(self, calleeName):
+        self._vmLines.append('call' + ' ' + calleeName)
 
-    def write_if(self):
-        pass
+    def _write_function(self):
+        self._vmLines.insert(0, (
+                'function' + ' ' + self._fileName + '.' + self._subroutineName + ' ' + str(self._localVarCount)))
 
-    def write_call(self):
-        pass
+    def _write_return(self):
+        self._vmLines.append('return')
 
-    def write_function(self):
-        pass
+    def _write_file(self):
 
-    def write_return(self):
-        pass
+        self._write_function()
+        self._write_return()
 
-    def _write_file(self, line):
-
-        # if os.path.isfile(filePath):
-        #     outFilePath = filePath.split('.')[0] + '.' + 'asm'
-        # elif os.path.isdir(filePath):
-        #     outFilePath = filePath + filePath.split('/')[-2] + '.' + 'asm'
-
-        with open('test.vm', 'a') as f:
-            print('code: %s' % line)
-            f.write(line + '\n')
+        with open('test.vm', 'w') as f:
+            for line in self._vmLines:
+                f.write(line + '\n')
