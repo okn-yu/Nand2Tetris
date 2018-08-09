@@ -40,7 +40,8 @@ class jackTokenizer:
 
             line = line.strip()
             # TODO: use _remove_comment_line() and _remove_empty_line() !
-            if (line[0:2] == '//') or  (line == '\r\n') or (line == '\n') or (line == '\t\n') or (line[0:3] == '/**') or (line[0:1] == '*'):
+            if (line[0:2] == '//') or (line == '\r\n') or (line == '\n') or (line == '\t\n') or (
+                    line[0:3] == '/**') or (line[0:1] == '*'):
                 continue
 
             if '//' in line:

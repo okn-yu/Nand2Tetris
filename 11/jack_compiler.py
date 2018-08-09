@@ -16,9 +16,9 @@ if __name__ == "__main__":
     pathParser = pp.PathParser(path)
 
     for jackFile in pathParser.jackFilesList:
-        tokenizer = jt.jackTokenizer(jackFile)          # input:xxx.jack File. output:xxxT.xml File.
+        tokenizer = jt.jackTokenizer(jackFile)                       # input:xxx.jack File. output:xxxT.xml File.
         compEngine = ce.compilationEngine(tokenizer.outFilePath)     # input:xxxT.xml File. output:xxx.xml File.
-        symTable = st.SymbolTable(compEngine.outFilePath)
+        symTable = st.SymbolTable(compEngine.outFilePath)            # input:xxx.xml File. output:xxx.VM File
         vw.VMWriter(compEngine.outFilePath)
 
     # jackTokenizer()       # input:xxx.jack File. output:xxxT.xml File.

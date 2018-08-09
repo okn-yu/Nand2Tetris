@@ -58,6 +58,8 @@ class compilationEngine:
         # print(self._index, tag, text)
         self._index += 1
 
+    # class tokens:
+    # 'class' className '{' classVarDec* subroutineDec* '}'
     def _compile_class(self):
 
         while True:
@@ -75,7 +77,10 @@ class compilationEngine:
                 self._add_xml(self._rootElement)    # className
                 self._add_xml(self._rootElement)    # '{'
 
+    # classVarDec tokens.
+    # ( 'static' | 'field' ) type varName ( ',' varName )* ';'
     def _compileClassVarDec(self, element):
+
         clsVarDecElement = ET.SubElement(element, 'classVarDec')
         _variable_kind = self._current_text()
         _variable_type = self._next_text()
@@ -259,6 +264,9 @@ class compilationEngine:
             else:
                 break
 
+    # term tokens:
+    # integerConstant | stringConstant | keywordConstant | varName | varName '[' expression ']' | subroutineCall |\
+    #  '(' expression ')' | unaryOp term
     def _compileTerm(self, element):
         termElement = ET.SubElement(element, 'term')
         tag, text = self._current_element()
