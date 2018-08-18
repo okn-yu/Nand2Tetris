@@ -3,6 +3,7 @@ import xml.dom.minidom as minidom
 
 OS_FILES = ['Array', 'Keyboard', 'Math', 'Memory', 'Output', 'Screen', 'String', 'Sys']
 
+# TODO: modify 'elm' -> 'topElm'
 
 class VMWriter:
 
@@ -154,6 +155,8 @@ class VMWriter:
                 self._parse_do_statement_elm(childElm)
             if tag == 'letStatement':
                 self._parse_let_statement_elm(childElm)
+            if tag == 'whileStatement':
+                self._parse_while_statement_elm(childElm)
 
     # doStatement tokens:
     # 'do' subroutineCall ';'
@@ -178,6 +181,7 @@ class VMWriter:
         assert letElm.text.strip() == 'let'
 
         varElm = next(iter_elm)
+        returnVal = varElm.text.strip()
         assert varElm.tag == 'identifier'
 
         symElm = next(iter_elm)
@@ -187,14 +191,40 @@ class VMWriter:
         assert expElm.tag == 'expression'
 
         self._parse_expression_elm(expElm)
+        self._write_pop('local', returnVal)
+
+    # while statement tokens:
+    # 'while' '(' expression ')' '{' statements '}'
+    def _parse_while_statement_elm(self, elm):
+        print('compile_do_statement')
+
+        iter_elm = iter(elm)
+
+        whileElm = next(iter_elm)
+        assert whileElm.text.strip() == 'while'
+
+        assert next(iter_elm).text.strip() == '('
+        expElm = next(iter_elm)
+        assert next(iter_elm).text.strip() == ')'
+
+        assert next(iter_elm).text.strip() == '{'
+        statementElm = next(iter_elm)
+        assert next(iter_elm).text.strip() == '}'
+
+        self._write_label('L1')
+        self._parse_expression_elm(expElm)
+        self._write_label('L2')
+
 
     # subroutineCall tokens:
     # subroutineName '(' expressionList ')' ';' | (className | varName) '.' subroutineName '(' expressionList ')' ';'
     def _parse_subroutine_call_elm(self, elm):
         print('compile_subroutine_call')
 
+        assert 'expressionList' in self._extract_chileElms_tagList(elm)
+
         subroutineName = ''
-        childTextList = self._extract_childElm_textList(elm)
+        childTextList = self._extract_childElms_textList(elm)
         print(childTextList)
 
         assert elm.tag in ['term', 'doStatement']
@@ -207,6 +237,7 @@ class VMWriter:
             subroutineName += next(iter_elm).text.strip()
             dotElm = next(iter_elm)
             assert dotElm.text.strip() == '.'
+            subroutineName += dotElm.text.strip()
 
         subroutineName += next(iter_elm).text.strip()
 
@@ -222,9 +253,11 @@ class VMWriter:
     # expressionList tokens:
     # (expression (',' expression)* )?
     def _parse_expression_list_elm(self, elm):
+
+        assert elm.tag == 'expressionList'
         print('start compile_expression_list')
 
-        print(elm)
+        print(elm, elm.tag, elm.text.strip())
 
         for childElm in elm:
             tag, text = childElm.tag, childElm.text.strip()
@@ -238,6 +271,8 @@ class VMWriter:
     # term (op term)*
     def _parse_expression_elm(self, elm):
         print('start compile_expression')
+
+        print(elm, elm.tag, elm.text)
 
         termList = [childElm for childElm in elm if childElm.tag == 'term']
         opList = [childElm for childElm in elm if childElm.tag == 'symbol']
@@ -255,7 +290,7 @@ class VMWriter:
 
         operator = elm.text.strip()
         print('operator: %s' % operator)
-        assert operator in ['+', '-', '*', '/']
+        assert operator in ['+', '-', '*', '/', '&', '|', '<', '>', '=']
 
         self._write_arithmetic(operator)
 
@@ -268,35 +303,57 @@ class VMWriter:
         print('start compile_term')
         print('term: %s' % elm)
 
+        assert elm.tag == 'term'
+
+        print(self._extract_chileElms_tagList(elm))
+        if 'expressionList' in self._extract_chileElms_tagList(elm) :
+            self._parse_subroutine_call_elm(elm)
+            print('end compile_term')
+            return
+
         # in case of 'term' 'symbol' 'term'
         for childElm in elm:
             tag, text = childElm.tag, childElm.text.strip()
-            # print(tag, text)
+            print(tag, text)
 
             if tag == 'integerConstant':
                 print('integer: %s' % text)
                 self._write_push('constant', text)
 
             elif tag == 'stringConstant':
-                self._write_push('constant', text)
+                self._parse_stringConstant_elm(text)
 
             elif tag == 'expression':
                 self._parse_expression_elm(childElm)
 
             elif tag == 'identifier':
                 if next(iter(childElm), 'varOnly') == 'varOnly':
-                    pass # TODO!
+                    self._currentVariable = text
+                    self._write_push('local', text)
                 else:
                     self._parse_subroutine_call_elm(elm)
 
         print('end compile_term')
 
+    def _parse_stringConstant_elm(self, text):
+
+        str_len = len(text)
+        self._write_push('constant', str_len)
+        self._write_call('String.new')
+
+        ascii_char_list = self._text_2_ascii_code(text)
+
+        for code in ascii_char_list:
+            self._write_push('constant', code)
+            self._write_call('String.appendChar')
+
     def _write_push(self, type, var):
 
-        self._vmLines.append('push' + ' ' + type + ' ' + var)
+        self._vmLines.append('push' + ' ' + type + ' ' +  str(var))
 
-    def _write_pop(self):
-        pass
+    def _write_pop(self, type, var):
+
+        self._vmLines.append('pop' + ' ' + type + ' ' + str(var))
 
     def _write_arithmetic(self, operator):
 
@@ -306,8 +363,14 @@ class VMWriter:
         elif operator == '*':
             self._write_call('Math.multiply', arg='2')
 
-    def _write_label(self):
-        pass
+        elif operator == '<':
+            self._vmLines.append('lt')
+
+        elif operator == '>':
+            self._vmLines.append('gt')
+
+    def _write_label(self, label):
+        self._vmLines.append('label' + ' ' + label)
 
     def _write_goto(self):
         pass
@@ -315,16 +378,32 @@ class VMWriter:
     def _write_if(self):
         pass
 
-    def _write_call(self, calleeName, arg='TEST'):
+    def _write_call(self, subroutine_name):
 
-        if calleeName == 'Output.printInt':
+        print(subroutine_name)
+
+        if subroutine_name == 'Output.printInt':
             arg = '1'
-        elif calleeName == 'Output.printString':
+
+        elif subroutine_name == 'Output.printString':
             arg = '1'
-        elif calleeName == 'Math.multiply':
+
+        elif subroutine_name == 'Math.multiply':
             arg = '2'
 
-        self._vmLines.append('call' + ' ' + calleeName + ' ' + arg)
+        elif subroutine_name == 'String.new':
+            arg = '1'
+
+        elif subroutine_name == 'String.appendChar':
+            arg = '2'
+
+        elif subroutine_name == 'Keyboard.readInt':
+            arg = '1'
+
+        elif subroutine_name == 'Array.new':
+            arg = '1'
+
+        self._vmLines.append('call' + ' ' + subroutine_name + ' ' + arg)
 
     def _write_function(self):
         self._vmLines.insert(0, (
@@ -344,6 +423,14 @@ class VMWriter:
             for line in self._vmLines:
                 f.write(line + '\n')
 
-    def _extract_childElm_textList(self, elm):
+    def _extract_childElms_textList(self, elm):
 
         return [text.strip() for text in elm.itertext() if text.strip()]
+
+    def _extract_chileElms_tagList(self, elm):
+
+        return [child_elm.tag for child_elm in elm]
+
+    def _text_2_ascii_code(self, list):
+
+        return [str(ord(c)) for c in list]
