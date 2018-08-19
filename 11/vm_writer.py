@@ -20,6 +20,8 @@ class VMWriter:
         self._subroutineName = ''
         self._localVarCount = 0
 
+        self._label_count = 0
+
         self._cutoff_fileName()
         self._cutoff_filePath()
         self._read_txmlFile()
@@ -175,14 +177,46 @@ class VMWriter:
     def _parse_let_statement_elm(self, elm):
         print('compile_let_statement')
 
+        if self._is_retVal_array(elm):
+            self._parse_let_statement_elm_with_array(elm)
+        else:
+            iter_elm = iter(elm)
+
+            letElm = next(iter_elm)
+            assert letElm.text.strip() == 'let'
+
+            varElm = next(iter_elm)
+            retVal = varElm.text.strip()
+            assert varElm.tag == 'identifier'
+
+            symElm = next(iter_elm)
+            assert symElm.text.strip() == '='
+
+            expElm = next(iter_elm)
+            assert expElm.tag == 'expression'
+
+            self._parse_expression_elm(expElm)
+            self._write_pop('local', retVal)
+
+    def _parse_let_statement_elm_with_array(self, elm):
+
         iter_elm = iter(elm)
 
         letElm = next(iter_elm)
         assert letElm.text.strip() == 'let'
 
         varElm = next(iter_elm)
-        returnVal = varElm.text.strip()
+        retVal = varElm.text.strip()
         assert varElm.tag == 'identifier'
+
+        lBracketElm = next(iter_elm)
+        assert lBracketElm.text.strip() == '['
+
+        expElm = next(iter_elm)
+        assert expElm.tag == 'expression'
+
+        rBracketElm = next(iter_elm)
+        assert rBracketElm.text.strip() == ']'
 
         symElm = next(iter_elm)
         assert symElm.text.strip() == '='
@@ -190,8 +224,11 @@ class VMWriter:
         expElm = next(iter_elm)
         assert expElm.tag == 'expression'
 
+        self._write_push('local', retVal)
         self._parse_expression_elm(expElm)
-        self._write_pop('local', returnVal)
+        self._write_arithmetic('+')
+        self._parse_expression_elm(expElm)
+        self._write_pop('local', retVal)
 
     # while statement tokens:
     # 'while' '(' expression ')' '{' statements '}'
@@ -211,9 +248,14 @@ class VMWriter:
         statementElm = next(iter_elm)
         assert next(iter_elm).text.strip() == '}'
 
-        self._write_label('L1')
+        self._write_label('WHILE_START')
         self._parse_expression_elm(expElm)
-        self._write_label('L2')
+        self._write_if('WHILE_END')
+        self._parse_statements_elm(statementElm)
+        self._write_goto('WHILE_START')
+        self._write_label('WHILE_END')
+
+        self._label_count += 1
 
 
     # subroutineCall tokens:
@@ -370,13 +412,13 @@ class VMWriter:
             self._vmLines.append('gt')
 
     def _write_label(self, label):
-        self._vmLines.append('label' + ' ' + label)
+        self._vmLines.append('label' + ' ' + label + str(self._label_count))
 
-    def _write_goto(self):
-        pass
+    def _write_goto(self, label):
+        self._vmLines.append('if-goto' + ' ' + label + str(self._label_count))
 
-    def _write_if(self):
-        pass
+    def _write_if(self, label):
+        self._vmLines.append('if-goto' + ' ' + label + str(self._label_count))
 
     def _write_call(self, subroutine_name):
 
@@ -434,3 +476,22 @@ class VMWriter:
     def _text_2_ascii_code(self, list):
 
         return [str(ord(c)) for c in list]
+
+    def _is_retVal_array(self, elm):
+
+        textList = self._extract_childElms_textList(elm)
+
+        if not '=' in textList:
+            return False
+
+        if not '[' in textList:
+            return False
+
+        eqIndex = textList.index('=')
+        bracketIndex = textList.index('[')
+
+        if eqIndex < bracketIndex:
+            return False
+
+        if bracketIndex < eqIndex:
+            return True
