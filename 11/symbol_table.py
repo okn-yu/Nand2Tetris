@@ -26,7 +26,7 @@ class SymbolTable:
     def define(self):
         for e in self._root.iter('identifier'):
             if e.attrib:
-                name = e.text
+                name = e.text.strip()
                 kind = e.attrib['kind']
                 type = e.attrib['type']
 
@@ -45,14 +45,20 @@ class SymbolTable:
         # return Integer
 
     def kind_of(self, name):
-        pass
+        return self._search_symbol(name)[0]
         # return static, field, arg, var, none
 
     def type_of(self, name):
-        pass
+        return self._search_symbol(name)[1]
         # return int, char, boolean, className
 
     def index_of(self, name):
-        pass
+        return self._search_symbol(name)[2]
         # return Integer
+
+    def _search_symbol(self, symbol):
+
+        for dict in self.symbolTable:
+            if symbol in dict.keys():
+                return dict[symbol]
 

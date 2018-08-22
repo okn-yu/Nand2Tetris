@@ -1,7 +1,8 @@
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 
-OS_FILES = ['Array', 'Keyboard', 'Math', 'Memory', 'Output', 'Screen', 'String', 'Sys']
+import const
+import symbol_table as st
 
 # TODO: modify 'elm' -> 'topElm'
 
@@ -16,6 +17,7 @@ class VMWriter:
         self._filePath = ''         # ex. Seven
         self._className = ''        # ex. main
 
+        self._symbolTable = st.SymbolTable(xmlFile)
         self._vmLines = []
         self._subroutineName = ''
         self._localVarCount = 0
@@ -196,9 +198,10 @@ class VMWriter:
             assert expElm.tag == 'expression'
 
             self._parse_expression_elm(expElm)
-            self._write_pop('local', retVal)
+            self._write_pop(retVal)
 
     def _parse_let_statement_elm_with_array(self, elm):
+        print('compile_let_with_array_statement')
 
         iter_elm = iter(elm)
 
@@ -212,8 +215,8 @@ class VMWriter:
         lBracketElm = next(iter_elm)
         assert lBracketElm.text.strip() == '['
 
-        expElm = next(iter_elm)
-        assert expElm.tag == 'expression'
+        bracketExpElm = next(iter_elm)
+        assert bracketExpElm.tag == 'expression'
 
         rBracketElm = next(iter_elm)
         assert rBracketElm.text.strip() == ']'
@@ -224,11 +227,16 @@ class VMWriter:
         expElm = next(iter_elm)
         assert expElm.tag == 'expression'
 
-        self._write_push('local', retVal)
-        self._parse_expression_elm(expElm)
+
+        # 配列操作は変数とは宣言〜値の代入までの根本的な処理が異なる。
+        self._write_push(retVal)
+        self._parse_expression_elm(bracketExpElm)
         self._write_arithmetic('+')
+        self._write_pop('pointer')
+
         self._parse_expression_elm(expElm)
-        self._write_pop('local', retVal)
+
+        self._write_pop('that')
 
     # while statement tokens:
     # 'while' '(' expression ')' '{' statements '}'
@@ -248,11 +256,12 @@ class VMWriter:
         statementElm = next(iter_elm)
         assert next(iter_elm).text.strip() == '}'
 
-        self._write_label('WHILE_START')
+        self._write_label('WHILE_EXP')
         self._parse_expression_elm(expElm)
+        self._write_arithmetic('not')
         self._write_if('WHILE_END')
         self._parse_statements_elm(statementElm)
-        self._write_goto('WHILE_START')
+        self._write_goto('WHILE_EXP')
         self._write_label('WHILE_END')
 
         self._label_count += 1
@@ -267,7 +276,6 @@ class VMWriter:
 
         subroutineName = ''
         childTextList = self._extract_childElms_textList(elm)
-        print(childTextList)
 
         assert elm.tag in ['term', 'doStatement']
         iter_elm = iter(elm)
@@ -314,7 +322,7 @@ class VMWriter:
     def _parse_expression_elm(self, elm):
         print('start compile_expression')
 
-        print(elm, elm.tag, elm.text)
+        print(elm, elm.tag, elm.text.strip())
 
         termList = [childElm for childElm in elm if childElm.tag == 'term']
         opList = [childElm for childElm in elm if childElm.tag == 'symbol']
@@ -331,10 +339,16 @@ class VMWriter:
         print('start compile_op')
 
         operator = elm.text.strip()
-        print('operator: %s' % operator)
         assert operator in ['+', '-', '*', '/', '&', '|', '<', '>', '=']
 
-        self._write_arithmetic(operator)
+        if operator in ['+', '-', '<', '>']:
+            self._write_arithmetic(operator)
+
+        elif operator == '*':
+            self._write_call('Math.multiply')
+
+        elif operator == '/':
+            self._write_call('Math.divide')
 
         print('end compile_op')
 
@@ -343,7 +357,7 @@ class VMWriter:
     #  '(' expression ')' | unaryOp term
     def _parse_term_elm(self, elm):
         print('start compile_term')
-        print('term: %s' % elm)
+        print(elm.tag, elm.text.strip())
 
         assert elm.tag == 'term'
 
@@ -353,17 +367,39 @@ class VMWriter:
             print('end compile_term')
             return
 
+        if '[' in self._extract_childElms_textList(elm):
+
+            iter_elm = iter(elm)
+
+            varElm = next(iter_elm)
+            varName = varElm.text.strip()
+            assert varElm.tag  == 'identifier'
+
+            assert next(iter_elm).text.strip() == '['
+
+            expElm = next(iter_elm)
+            assert expElm.tag == 'expression'
+
+            assert next(iter_elm).text.strip() == ']'
+
+            self._write_push(varName)
+            self._parse_expression_elm(expElm)
+            self._write_arithmetic('+')
+            self._write_pop('pointer')
+            self._write_push('that')
+
+            return
+
         # in case of 'term' 'symbol' 'term'
         for childElm in elm:
             tag, text = childElm.tag, childElm.text.strip()
             print(tag, text)
 
-            if tag == 'integerConstant':
-                print('integer: %s' % text)
-                self._write_push('constant', text)
-
-            elif tag == 'stringConstant':
+            if tag == 'stringConstant':
                 self._parse_stringConstant_elm(text)
+
+            elif tag == 'integerConstant':
+                self._parse_integerConstant_elm(text)
 
             elif tag == 'expression':
                 self._parse_expression_elm(childElm)
@@ -371,7 +407,7 @@ class VMWriter:
             elif tag == 'identifier':
                 if next(iter(childElm), 'varOnly') == 'varOnly':
                     self._currentVariable = text
-                    self._write_push('local', text)
+                    self._write_push(text)
                 else:
                     self._parse_subroutine_call_elm(elm)
 
@@ -379,79 +415,86 @@ class VMWriter:
 
     def _parse_stringConstant_elm(self, text):
 
-        str_len = len(text)
-        self._write_push('constant', str_len)
+        str_len = len(text) + 1 # 1 for space.
+        self._write_push(str_len)
         self._write_call('String.new')
 
-        ascii_char_list = self._text_2_ascii_code(text)
+        ascii_char_list = self._text_2_ascii_code(text + ' ')
 
         for code in ascii_char_list:
-            self._write_push('constant', code)
+            self._write_push(code)
             self._write_call('String.appendChar')
 
-    def _write_push(self, type, var):
+    def _parse_integerConstant_elm(self, text):
 
-        self._vmLines.append('push' + ' ' + type + ' ' +  str(var))
+        self._write_push(int(text))
 
-    def _write_pop(self, type, var):
+    def _write_push(self, var):
 
-        self._vmLines.append('pop' + ' ' + type + ' ' + str(var))
+        if var == 'that':
+            self._vmLines.append('push' + ' ' + str(var) + ' ' + str(0))
+
+        elif type(var) is int:
+            self._vmLines.append('push' + ' ' + 'constant' + ' ' + str(var))
+
+        elif type(var) is str:
+            kind = self._symbolTable.kind_of(var)
+            index = self._symbolTable.index_of(var)
+            segment = self._get_segment(kind)
+            self._vmLines.append('push' + ' ' + segment + ' ' + str(index))
+
+    def _write_pop(self, var):
+
+        if var == 'pointer':
+            self._vmLines.append('pop' + ' ' + var + ' ' + str(1))
+
+        elif var == 'that':
+            self._vmLines.append('pop' + ' ' + var + ' ' + str(0))
+
+        elif var == 'temp':
+            self._vmLines.append('pop' + ' ' + var + ' ' + str(0))
+
+        elif type(var) is str:
+            kind = self._symbolTable.kind_of(var)
+            index = self._symbolTable.index_of(var)
+            segment = self._get_segment(kind)
+            self._vmLines.append('pop' + ' ' + segment + ' ' + str(index))
+
+    def _get_segment(self, kind):
+
+        if kind == 'var':
+            return 'local'
 
     def _write_arithmetic(self, operator):
 
-        if operator == '+':
-            self._vmLines.append('add')
+        if operator in ['+', '-', '<', '>']:
+            operator = const.ARITHMETIC_OP_2_CMD[operator]
 
-        elif operator == '*':
-            self._write_call('Math.multiply', arg='2')
-
-        elif operator == '<':
-            self._vmLines.append('lt')
-
-        elif operator == '>':
-            self._vmLines.append('gt')
+        self._vmLines.append(operator)
 
     def _write_label(self, label):
         self._vmLines.append('label' + ' ' + label + str(self._label_count))
 
     def _write_goto(self, label):
-        self._vmLines.append('if-goto' + ' ' + label + str(self._label_count))
+        self._vmLines.append('goto' + ' ' + label + str(self._label_count))
 
     def _write_if(self, label):
         self._vmLines.append('if-goto' + ' ' + label + str(self._label_count))
 
     def _write_call(self, subroutine_name):
 
-        print(subroutine_name)
-
-        if subroutine_name == 'Output.printInt':
-            arg = '1'
-
-        elif subroutine_name == 'Output.printString':
-            arg = '1'
-
-        elif subroutine_name == 'Math.multiply':
-            arg = '2'
-
-        elif subroutine_name == 'String.new':
-            arg = '1'
-
-        elif subroutine_name == 'String.appendChar':
-            arg = '2'
-
-        elif subroutine_name == 'Keyboard.readInt':
-            arg = '1'
-
-        elif subroutine_name == 'Array.new':
-            arg = '1'
-
+        arg = const.API_ARG[subroutine_name]
         self._vmLines.append('call' + ' ' + subroutine_name + ' ' + arg)
+
+        if subroutine_name in const.VOID_SUBROUTINES:
+            self._write_pop('temp')
 
     def _write_function(self):
         self._vmLines.insert(0, (
                 'function' + ' ' + self._fileName.split('.')[0] + '.' + self._subroutineName + ' ' + str(self._localVarCount)))
 
     def _write_return(self):
+        self._write_push(0)
         self._vmLines.append('return')
 
     def _write_file(self):
@@ -475,7 +518,7 @@ class VMWriter:
 
     def _text_2_ascii_code(self, list):
 
-        return [str(ord(c)) for c in list]
+        return [ord(c) for c in list]
 
     def _is_retVal_array(self, elm):
 
