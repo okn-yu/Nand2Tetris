@@ -1,3 +1,4 @@
+import inspect
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 
@@ -10,7 +11,7 @@ class VMWriter:
 
     def __init__(self, xmlFile):
 
-        print('VMWriter:' + xmlFile)
+        # print('VMWriter:' + xmlFile)
 
         self._xmlFile = xmlFile     # ex. Seven/Main.xml
         self._fileName = ''         # ex. Main.xml
@@ -21,7 +22,6 @@ class VMWriter:
         self._vmLines = []
         self._subroutineName = ''
         self._localVarCount = 0
-
         self._label_count = 0
 
         self._cutoff_fileName()
@@ -48,10 +48,18 @@ class VMWriter:
         elm = ET.parse(self._xmlFile)
         self._root = elm.getroot()
 
-    def deco(func):
+    def debug(func):
+
+        def _add_indent(num):
+            for i in range(0, num):
+                print(' ', end='')
+
         def wrapper(*args, **kwargs):
-            print('start %s ' % func.__name__)
+            indent_len = len(inspect.stack())
+            _add_indent(indent_len)
+            print('start %s' % func.__name__)
             func(*args, **kwargs)
+            _add_indent(indent_len)
             print('end %s ' % func.__name__)
 
         return wrapper
@@ -63,7 +71,7 @@ class VMWriter:
 
     # class tokens:
     # 'class' className '{' classVarDec* subroutineDec* '}'
-    @deco
+    @debug
     def _parse_class_elm(self):
 
         classElm = iter(self._root)
@@ -73,24 +81,19 @@ class VMWriter:
         assert classNameElm.tag == 'identifier'
         self._className = classNameElm.text.strip()
 
-        print('start compile_class')
-
         for childElm in classElm:
             if childElm.tag == 'classVarDec':
                 self._parse_class_var_dec_elm(childElm)
             if childElm.tag == 'subroutineDec':
                 self._parse_subroutine_dec_elm(childElm)
 
-        print('end compile_class')
-
     def _parse_class_var_dec_elm(self, elm):
         pass
 
     # subroutine token:
     # ('constructor' | 'function' | 'method') ('void' | type) subroutineName '(' parameterList ')' subrutineBody
+    @debug
     def _parse_subroutine_dec_elm(self, elm):
-
-        print('start compile_subroutine_dec')
 
         iter_elm = iter(elm)
 
@@ -124,8 +127,8 @@ class VMWriter:
 
     # subroutineBody tokens:
     # '{' varDec* statements* '}'
+    @debug
     def _parse_subroutine_body_elm(self, elm):
-        print('compile_subroutine_body')
 
         for childElm in elm:
             tag, text = childElm.tag, childElm.text.strip()
@@ -138,8 +141,8 @@ class VMWriter:
 
     # varDec tokens:
     # 'var' type typeName '(' ',' varName ')'* ':'
+    @debug
     def _parse_var_dec_elm(self, elm):
-        print('compile_var_dec')
 
         self._localVarCount += 1
 
@@ -150,8 +153,8 @@ class VMWriter:
 
     # statements tokens:
     # statement*
+    @debug
     def _parse_statements_elm(self, elm):
-        print('compile_statements')
 
         for childElm in elm:
             tag, text = childElm.tag, childElm.text.strip()
@@ -164,8 +167,8 @@ class VMWriter:
 
     # doStatement tokens:
     # 'do' subroutineCall ';'
+    @debug
     def _parse_do_statement_elm(self, elm):
-        print('compile_do_statement')
 
         iter_elm = iter(elm)
 
@@ -176,8 +179,8 @@ class VMWriter:
 
     # letStatement tokens:
     # 'let' varName ('[' expression ']')? '=' expression ';'
+    @debug
     def _parse_let_statement_elm(self, elm):
-        print('compile_let_statement')
 
         if self._is_retVal_array(elm):
             self._parse_let_statement_elm_with_array(elm)
@@ -200,8 +203,8 @@ class VMWriter:
             self._parse_expression_elm(expElm)
             self._write_pop(retVal)
 
+    @debug
     def _parse_let_statement_elm_with_array(self, elm):
-        print('compile_let_with_array_statement')
 
         iter_elm = iter(elm)
 
@@ -240,8 +243,8 @@ class VMWriter:
 
     # while statement tokens:
     # 'while' '(' expression ')' '{' statements '}'
+    @debug
     def _parse_while_statement_elm(self, elm):
-        print('compile_do_statement')
 
         iter_elm = iter(elm)
 
@@ -266,11 +269,10 @@ class VMWriter:
 
         self._label_count += 1
 
-
     # subroutineCall tokens:
     # subroutineName '(' expressionList ')' ';' | (className | varName) '.' subroutineName '(' expressionList ')' ';'
+    @debug
     def _parse_subroutine_call_elm(self, elm):
-        print('compile_subroutine_call')
 
         assert 'expressionList' in self._extract_chileElms_tagList(elm)
 
@@ -302,10 +304,10 @@ class VMWriter:
 
     # expressionList tokens:
     # (expression (',' expression)* )?
+    @debug
     def _parse_expression_list_elm(self, elm):
 
         assert elm.tag == 'expressionList'
-        print('start compile_expression_list')
 
         print(elm, elm.tag, elm.text.strip())
 
@@ -315,12 +317,10 @@ class VMWriter:
             if tag == 'expression':
                 self._parse_expression_elm(childElm)
 
-        print('end compile_expression_list')
-
     # expression tokens:
     # term (op term)*
+    @debug
     def _parse_expression_elm(self, elm):
-        print('start compile_expression')
 
         print(elm, elm.tag, elm.text.strip())
 
@@ -333,10 +333,8 @@ class VMWriter:
         for op in reversed(opList):
             self._parse_op_elm(op)
 
-        print('end compile_expression')
-
+    @debug
     def _parse_op_elm(self, elm):
-        print('start compile_op')
 
         operator = elm.text.strip()
         assert operator in ['+', '-', '*', '/', '&', '|', '<', '>', '=']
@@ -350,13 +348,11 @@ class VMWriter:
         elif operator == '/':
             self._write_call('Math.divide')
 
-        print('end compile_op')
-
     # term tokens:
     # integerConstant | stringConstant | keywordConstant | varName | varName '[' expression ']' | subroutineCall |\
     #  '(' expression ')' | unaryOp term
+    @debug
     def _parse_term_elm(self, elm):
-        print('start compile_term')
         print(elm.tag, elm.text.strip())
 
         assert elm.tag == 'term'
@@ -373,6 +369,7 @@ class VMWriter:
 
             varElm = next(iter_elm)
             varName = varElm.text.strip()
+            print(varName, varElm.tag)
             assert varElm.tag  == 'identifier'
 
             assert next(iter_elm).text.strip() == '['
@@ -411,8 +408,7 @@ class VMWriter:
                 else:
                     self._parse_subroutine_call_elm(elm)
 
-        print('end compile_term')
-
+    @debug
     def _parse_stringConstant_elm(self, text):
 
         str_len = len(text) + 1 # 1 for space.
@@ -425,10 +421,12 @@ class VMWriter:
             self._write_push(code)
             self._write_call('String.appendChar')
 
+    @debug
     def _parse_integerConstant_elm(self, text):
 
         self._write_push(int(text))
 
+    @debug
     def _write_push(self, var):
 
         if var == 'that':
@@ -443,6 +441,7 @@ class VMWriter:
             segment = self._get_segment(kind)
             self._vmLines.append('push' + ' ' + segment + ' ' + str(index))
 
+    @debug
     def _write_pop(self, var):
 
         if var == 'pointer':
@@ -460,11 +459,13 @@ class VMWriter:
             segment = self._get_segment(kind)
             self._vmLines.append('pop' + ' ' + segment + ' ' + str(index))
 
+    @debug
     def _get_segment(self, kind):
 
         if kind == 'var':
             return 'local'
 
+    @debug
     def _write_arithmetic(self, operator):
 
         if operator in ['+', '-', '<', '>']:
@@ -472,15 +473,19 @@ class VMWriter:
 
         self._vmLines.append(operator)
 
+    @debug
     def _write_label(self, label):
         self._vmLines.append('label' + ' ' + label + str(self._label_count))
 
+    @debug
     def _write_goto(self, label):
         self._vmLines.append('goto' + ' ' + label + str(self._label_count))
 
+    @debug
     def _write_if(self, label):
         self._vmLines.append('if-goto' + ' ' + label + str(self._label_count))
 
+    @debug
     def _write_call(self, subroutine_name):
 
         arg = const.API_ARG[subroutine_name]
@@ -489,14 +494,17 @@ class VMWriter:
         if subroutine_name in const.VOID_SUBROUTINES:
             self._write_pop('temp')
 
+    @debug
     def _write_function(self):
         self._vmLines.insert(0, (
                 'function' + ' ' + self._fileName.split('.')[0] + '.' + self._subroutineName + ' ' + str(self._localVarCount)))
 
+    @debug
     def _write_return(self):
         self._write_push(0)
         self._vmLines.append('return')
 
+    @debug
     def _write_file(self):
 
         self._write_function()
@@ -508,18 +516,22 @@ class VMWriter:
             for line in self._vmLines:
                 f.write(line + '\n')
 
+    @debug
     def _extract_childElms_textList(self, elm):
 
         return [text.strip() for text in elm.itertext() if text.strip()]
 
+    @debug
     def _extract_chileElms_tagList(self, elm):
 
         return [child_elm.tag for child_elm in elm]
 
+    @debug
     def _text_2_ascii_code(self, list):
 
         return [ord(c) for c in list]
 
+    @debug
     def _is_retVal_array(self, elm):
 
         textList = self._extract_childElms_textList(elm)
