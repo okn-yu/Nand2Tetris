@@ -58,9 +58,22 @@ class VMWriter:
             indent_len = len(inspect.stack())
             _add_indent(indent_len)
             print('start %s' % func.__name__)
-            func(*args, **kwargs)
+
+            if args[1]:
+                _add_indent(indent_len+1)
+                print(args[1], end='')
+
+            if hasattr(args[1], 'itertext'):
+                print( [text.strip() for text in args[1].itertext() if text.strip()])
+            else:
+                print()
+
+            returnValue = func(*args, **kwargs)
+
             _add_indent(indent_len)
             print('end %s ' % func.__name__)
+
+            return returnValue
 
         return wrapper
 
@@ -71,7 +84,6 @@ class VMWriter:
 
     # class tokens:
     # 'class' className '{' classVarDec* subroutineDec* '}'
-    @debug
     def _parse_class_elm(self):
 
         classElm = iter(self._root)
@@ -309,8 +321,6 @@ class VMWriter:
 
         assert elm.tag == 'expressionList'
 
-        print(elm, elm.tag, elm.text.strip())
-
         for childElm in elm:
             tag, text = childElm.tag, childElm.text.strip()
 
@@ -321,8 +331,6 @@ class VMWriter:
     # term (op term)*
     @debug
     def _parse_expression_elm(self, elm):
-
-        print(elm, elm.tag, elm.text.strip())
 
         termList = [childElm for childElm in elm if childElm.tag == 'term']
         opList = [childElm for childElm in elm if childElm.tag == 'symbol']
@@ -353,60 +361,90 @@ class VMWriter:
     #  '(' expression ')' | unaryOp term
     @debug
     def _parse_term_elm(self, elm):
-        print(elm.tag, elm.text.strip())
 
         assert elm.tag == 'term'
 
-        print(self._extract_chileElms_tagList(elm))
-        if 'expressionList' in self._extract_chileElms_tagList(elm) :
-            self._parse_subroutine_call_elm(elm)
-            print('end compile_term')
+        iter_elm = iter(elm)
+        current_elm = next(iter_elm)
+        tag = current_elm.tag
+        text = current_elm.text.strip()
+
+        if tag == 'integerConstant':                     # integerConstant
+            self._parse_integerConstant_elm(text)
+            return
+        if tag == 'stringConstant':                    # stringConstant
+            self._parse_stringConstant_elm(text)
+            return
+        if text in ['true', 'false', 'null', 'this']:  # KeywordConstant
+            return
+        if text in ['-', '~']:                         # unary OP
             return
 
-        if '[' in self._extract_childElms_textList(elm):
+        nextElm = next(iter_elm)
+        if tag ==  'symbol':
+            nextTag = nextElm.tag
+            if nextTag == 'expression':
+                assert text == '('
+                self._parse_expression_elm(nextElm)
+        elif tag == 'identifier':                         # varname
+            nextText = nextElm.text.strip()
+            if  nextText == '[':                          # varName '[' expression ']'
+                self._parse_expression_elm(next(iter_elm))
+            elif nextText == '(':                         # subroutineCall
+                self._parse_subroutine_call_elm(elm)
+            elif nextText == '.':                         # subroutineCall
+                self._parse_subroutine_call_elm(elm)
+            else:
+                self._write_push(text)                    # varName
 
-            iter_elm = iter(elm)
-
-            varElm = next(iter_elm)
-            varName = varElm.text.strip()
-            print(varName, varElm.tag)
-            assert varElm.tag  == 'identifier'
-
-            assert next(iter_elm).text.strip() == '['
-
-            expElm = next(iter_elm)
-            assert expElm.tag == 'expression'
-
-            assert next(iter_elm).text.strip() == ']'
-
-            self._write_push(varName)
-            self._parse_expression_elm(expElm)
-            self._write_arithmetic('+')
-            self._write_pop('pointer')
-            self._write_push('that')
-
-            return
-
-        # in case of 'term' 'symbol' 'term'
-        for childElm in elm:
-            tag, text = childElm.tag, childElm.text.strip()
-            print(tag, text)
-
-            if tag == 'stringConstant':
-                self._parse_stringConstant_elm(text)
-
-            elif tag == 'integerConstant':
-                self._parse_integerConstant_elm(text)
-
-            elif tag == 'expression':
-                self._parse_expression_elm(childElm)
-
-            elif tag == 'identifier':
-                if next(iter(childElm), 'varOnly') == 'varOnly':
-                    self._currentVariable = text
-                    self._write_push(text)
-                else:
-                    self._parse_subroutine_call_elm(elm)
+        # # Case subroutineCall.
+        # if 'expressionList' in self._extract_chileElms_tagList(elm) :
+        #     self._parse_subroutine_call_elm(elm)
+        #     return
+        #
+        # # Case varName '[' expression ']'
+        # if '[' in self._extract_childElms_textList(elm):
+        #
+        #     iter_elm = iter(elm)
+        #
+        #     varElm = next(iter_elm)
+        #     varName = varElm.text.strip()
+        #     assert varElm.tag  == 'identifier'
+        #
+        #     assert next(iter_elm).text.strip() == '['
+        #
+        #     expElm = next(iter_elm)
+        #     assert expElm.tag == 'expression'
+        #
+        #     assert next(iter_elm).text.strip() == ']'
+        #
+        #     self._write_push(varName)
+        #     self._parse_expression_elm(expElm)
+        #     self._write_arithmetic('+')
+        #     self._write_pop('pointer')
+        #     self._write_push('that')
+        #
+        #     return
+        #
+        # # in case of 'term' 'symbol' 'term'
+        # for childElm in elm:
+        #     tag, text = childElm.tag, childElm.text.strip()
+        #
+        #     if tag == 'stringConstant':
+        #         self._parse_stringConstant_elm(text)
+        #
+        #     elif tag == 'integerConstant':
+        #         self._parse_integerConstant_elm(text)
+        #
+        #     elif tag == 'expression':
+        #         self._parse_expression_elm(childElm)
+        #
+        #     elif tag == 'identifier':
+        #         if next(iter(childElm), 'varOnly') == 'varOnly':
+        #             self._currentVariable = text
+        #             self._write_push(text)
+        #         else:
+        #             self._parse_subroutine_call_elm(elm)
 
     @debug
     def _parse_stringConstant_elm(self, text):
@@ -518,17 +556,14 @@ class VMWriter:
 
     @debug
     def _extract_childElms_textList(self, elm):
-
         return [text.strip() for text in elm.itertext() if text.strip()]
 
     @debug
     def _extract_chileElms_tagList(self, elm):
-
         return [child_elm.tag for child_elm in elm]
 
     @debug
     def _text_2_ascii_code(self, list):
-
         return [ord(c) for c in list]
 
     @debug
