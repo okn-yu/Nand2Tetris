@@ -380,22 +380,25 @@ class VMWriter:
         if text in ['-', '~']:                         # unary OP
             return
 
-        nextElm = next(iter_elm)
+        nextElm = next(iter_elm, 'none')
         if tag ==  'symbol':
             nextTag = nextElm.tag
             if nextTag == 'expression':
                 assert text == '('
                 self._parse_expression_elm(nextElm)
         elif tag == 'identifier':                         # varname
-            nextText = nextElm.text.strip()
-            if  nextText == '[':                          # varName '[' expression ']'
-                self._parse_expression_elm(next(iter_elm))
-            elif nextText == '(':                         # subroutineCall
-                self._parse_subroutine_call_elm(elm)
-            elif nextText == '.':                         # subroutineCall
-                self._parse_subroutine_call_elm(elm)
+            if nextElm == 'none':
+                self._write_push(text)  # varName
             else:
-                self._write_push(text)                    # varName
+                nextText = nextElm.text.strip()
+                if  nextText == '[':                          # varName '[' expression ']'
+                    self._parse_expression_elm(next(iter_elm))
+                elif nextText == '(':                         # subroutineCall
+                    self._parse_subroutine_call_elm(elm)
+                elif nextText == '.':                         # subroutineCall
+                    self._parse_subroutine_call_elm(elm)
+                else:
+                    self._write_push(text)                    # varName
 
         # # Case subroutineCall.
         # if 'expressionList' in self._extract_chileElms_tagList(elm) :
