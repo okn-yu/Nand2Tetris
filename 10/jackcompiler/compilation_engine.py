@@ -1,76 +1,75 @@
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 
-from jackcompiler import jack_tokenizer as jt
-
-
 class compilationEngine:
 
-    def __init__(self, xmlFilePath):
-        print(xmlFilePath)
-        self._xmlFilePath = xmlFilePath
+    def __init__(self, txmlFilePath):
+        self._txmlFilePath = txmlFilePath
         self._read_txmlFile()
-        self._rootElement = ET.Element('class')
+        self._root_xml_element = ET.Element('class')
+        self._current_element = self._root_xml_element
         self._compile_class()
         self._write_xml()
 
     def _read_txmlFile(self):
-        # print(self._xmlFilePath)
-        tree = ET.parse(self._xmlFilePath)
-        self._root = tree.getroot()
-        self._index = 0
+        tree = ET.parse(self._txmlFilePath)
+        self._root_txml_element = tree.getroot()
+        self._txml_line_number = 0
 
-    def _current_element(self):
-        tag = self._root[self._index].tag
-        text = self._root[self._index].text.strip()
+    def _txml_line(self):
+        tag = self._root_txml_element[self._txml_line_number].tag
+        text = self._root_txml_element[self._txml_line_number].text.strip()
         return tag, text
 
     def _next_element(self):
-        tag = self._root[self._index + 1].tag
-        text = self._root[self._index + 1].text.strip()
+        tag = self._root_txml_element[self._txml_line_number + 1].tag
+        text = self._root_txml_element[self._txml_line_number + 1].text.strip()
         return tag, text
 
-    def _add_xml(self, element):
-        tag, text = self._current_element()
-
-        sub = ET.SubElement(element, tag)
+    def _add_xml(self, elm):
+        tag, text = self._txml_line()
+        sub = ET.SubElement(elm, tag)
         sub.text = ' ' + text + ' '
-        # print(self._index, tag, text)
-        self._index += 1
+        self._txml_line_number += 1
 
+    # class tokens:
+    # 'class' className '{' classVarDec* subroutineDec* '}'
     def _compile_class(self):
 
+
         while True:
-            tag, text = self._current_element()
+            tag, text = self._txml_line()
             if text in ['static', 'field']:
-                self._compileClassVarDec(self._rootElement)
+                self._compileClassVarDec(self._root_xml_element)
             elif text in ['constructor', 'function', 'method']:
-                self._compileSubroutine(self._rootElement)
+                self._compileSubroutine(self._root_xml_element)
             elif text == '}':
-                self._add_xml(self._rootElement)
+                self._add_xml(self._root_xml_element)
                 break
             else:
-                self._add_xml(self._rootElement)
+                self._add_xml(self._root_xml_element)
 
+    # class tokens:
+    # 'class' className '{' classVarDec* subroutineDec* '}'
     def _compileClassVarDec(self, element):
-        clsVarDecElement = ET.SubElement(element, 'classVarDec')
+        classVarDecElement = ET.SubElement(element, 'classVarDec')
         while True:
-            tag, text = self._current_element()
+            tag, text = self._txml_line()
             if text == 'static' or text == 'field':
-                self._add_xml(clsVarDecElement)  # 'static' or 'field'
-                self._add_xml(clsVarDecElement)  # type
-                self._add_xml(clsVarDecElement)  # varName
+                self._add_xml(classVarDecElement)  # 'static' or 'field'
+                self._add_xml(classVarDecElement)  # type
+                self._add_xml(classVarDecElement)  # varName
             elif text == ',':
-                self._add_xml(clsVarDecElement)  # ','
-                self._add_xml(clsVarDecElement)  # varName
+                self._add_xml(classVarDecElement)  # ','
+                self._add_xml(classVarDecElement)  # varName
             elif text == ';':
-                self._add_xml(clsVarDecElement)  # ';'
+                self._add_xml(classVarDecElement)  # ';'
                 break
 
     def _compileSubroutine(self, element):
         srDecElement = ET.SubElement(element, 'subroutineDec')
         while True:
-            tag, text = self._current_element()
+            tag, text = self._txml_line()
             if text == '(':
                 self._add_xml(srDecElement)  # '('
                 self._compileParameterList(srDecElement)  # parameterList
@@ -83,7 +82,7 @@ class compilationEngine:
     def _compileParameterList(self, element):
         paramListElement = ET.SubElement(element, 'parameterList')
         while True:
-            tag, text = self._current_element()
+            tag, text = self._txml_line()
             if text in ['int', 'char', 'boolean'] or type == 'identifier':
                 self._add_xml(paramListElement)  # type
                 self._add_xml(paramListElement)  # varName
@@ -97,7 +96,7 @@ class compilationEngine:
     def _compileSubroutineBody(self, element):
         srBodyElement = ET.SubElement(element, 'subroutineBody')
         while True:
-            tag, text = self._current_element()
+            tag, text = self._txml_line()
             if text == '{':
                 self._add_xml(srBodyElement)
             elif text == 'var':
@@ -110,7 +109,7 @@ class compilationEngine:
     def _compileVarDec(self, element):
         varDecElement = ET.SubElement(element, 'varDec')
         while True:
-            tag, text = self._current_element()
+            tag, text = self._txml_line()
             if text == ',':
                 self._add_xml(varDecElement)
                 self._add_xml(varDecElement)
@@ -123,7 +122,7 @@ class compilationEngine:
     def _compileStatements(self, element):
         varDecElement = ET.SubElement(element, 'statements')
         while True:
-            tag, text = self._current_element()
+            tag, text = self._txml_line()
             if text == 'let':
                 self._compileLet(varDecElement)
             elif text == 'if':
@@ -159,7 +158,7 @@ class compilationEngine:
     def _compileLet(self, element):
         letElement = ET.SubElement(element, 'letStatement')
         while True:
-            tag, text = self._current_element()
+            tag, text = self._txml_line()
             if text == 'let':  # 'let'
                 self._add_xml(letElement)
             elif tag == 'identifier':  # 'var'
@@ -187,7 +186,7 @@ class compilationEngine:
     def _compileReturn(self, element):
         returnElement = ET.SubElement(element, 'returnStatement')
         while True:
-            tag, text = self._current_element()
+            tag, text = self._txml_line()
             if text == 'return':
                 self._add_xml(returnElement)  # 'return'
             elif text == ';':
@@ -199,7 +198,7 @@ class compilationEngine:
 
     def _compileIf(self, element):
         ifElement = ET.SubElement(element, 'ifStatement')
-        tag, text = self._current_element()
+        tag, text = self._txml_line()
         self._add_xml(ifElement)  # 'if'
         self._add_xml(ifElement)  # '('
         self._compileExpression(ifElement)  # expression
@@ -208,7 +207,7 @@ class compilationEngine:
         self._compileStatements(ifElement)  # statements
         self._add_xml(ifElement)  # '}'
         while True:
-            tag, text = self._current_element()
+            tag, text = self._txml_line()
             if text == 'else':
                 self._add_xml(ifElement)  # 'else'
                 self._add_xml(ifElement)  # '{'
@@ -219,10 +218,10 @@ class compilationEngine:
 
     def _compileExpression(self, element):
         expElement = ET.SubElement(element, 'expression')
-        tag, text = self._current_element()
+        tag, text = self._txml_line()
         self._compileTerm(expElement)  # term
         while True:
-            tag, text = self._current_element()
+            tag, text = self._txml_line()
             if text in ['+', '-', '*', '/', '&', '|', '<', '>', '=']:
                 self._add_xml(expElement)  # op
                 self._compileTerm(expElement)  # term
@@ -231,7 +230,7 @@ class compilationEngine:
 
     def _compileTerm(self, element):
         termElement = ET.SubElement(element, 'term')
-        tag, text = self._current_element()
+        tag, text = self._txml_line()
         if tag == 'integerConstant':  # integerConstant
             self._add_xml(termElement)
         elif tag == 'stringConstant':  # stringConstant
@@ -271,7 +270,7 @@ class compilationEngine:
     def _compileExpressionList(self, element):
         expListElement = ET.SubElement(element, 'expressionList')
         while True:
-            tag, text = self._current_element()
+            tag, text = self._txml_line()
             if text == ',':
                 self._add_xml(expListElement)  # ','
                 self._compileExpression(expListElement)  # expression
@@ -299,12 +298,12 @@ class compilationEngine:
                 self._xmlString = self._xmlString.replace(line, startTag + endTag)
 
     def _write_xml(self):
-        self._xmlString = ET.tostring(self._rootElement, "utf-8", short_empty_elements=False)
+        self._xmlString = ET.tostring(self._root_xml_element, "utf-8", short_empty_elements=False)
         self._edit_xml_string()
 
-        outDirPath = self._xmlFilePath.split('/')[0]  # ex: ArrayTest/MyMainT.xml -> ArrayTest
-        outFileName = self._xmlFilePath.split('/')[1].split('.')[0][0:-1]  # ex: ArrayTest/MyMainT.xml -> MyMain
-        outFilePath = outDirPath + '/' + outFileName + '.xml'  # ex: ArrayTest/MyMain.xml
+        outDirPath = self._txmlFilePath.split('/')[0]  # ex: ArrayTest/MyMainT.xml -> ArrayTest
+        outFileName = self._txmlFilePath.split('/')[1].split('.')[0][0:-1]  # ex: ArrayTest/MyMainT.xml -> MyMain
+        outFilePath = outDirPath + '/' + outFileName + '2.xml'  # ex: ArrayTest/MyMain2.xml
 
         with open(outFilePath, 'w') as f:
             f.write(self._xmlString)
