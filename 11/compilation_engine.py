@@ -13,8 +13,10 @@ class compilationEngine:
         print(xmlFilePath)
         self._xmlFilePath = xmlFilePath
         self.className = ''
+        self._current_subroutineName = ''
 
         self._read_txmlFile()
+
         self._rootElement = ET.Element('class')
         self._compile_class()
         self._write_xml()
@@ -41,13 +43,15 @@ class compilationEngine:
     def _next_text(self):
         return self._root[self._index + 1].text.strip()
 
-    def _add_xml(self, element, kind=None, type=None):
+    def _add_xml(self, element, scope=None, kind=None, type=None):
         tag, text = self._current_element()
         attribDict = {}
         # print(tag, text)
 
         # self._set_attribute_(element, tag, text)
 
+        if scope:
+            attribDict['scope'] = scope
         if kind:
             attribDict['kind'] = kind
         if type:
@@ -89,10 +93,10 @@ class compilationEngine:
             if text == 'static' or text == 'field':
                 self._add_xml(clsVarDecElement)  # 'static' or 'field'
                 self._add_xml(clsVarDecElement)  # type
-                self._add_xml(clsVarDecElement, kind=_variable_kind, type=_variable_type)  # varName
+                self._add_xml(clsVarDecElement, scope='class', kind=_variable_kind, type=_variable_type)  # varName
             elif text == ',':
                 self._add_xml(clsVarDecElement)  # ','
-                self._add_xml(clsVarDecElement, kind=_variable_kind, type=_variable_type)  # varName
+                self._add_xml(clsVarDecElement, scope='class', kind=_variable_kind, type=_variable_type)  # varName
             elif text == ';':
                 self._add_xml(clsVarDecElement)  # ';'
                 break
@@ -101,6 +105,8 @@ class compilationEngine:
         srDecElement = ET.SubElement(element, 'subroutineDec')
         while True:
             tag, text = self._current_element()
+            if tag == 'identifier':
+                self._current_subroutineName = text
             if text == '(':
                 self._add_xml(srDecElement)  # '('
                 self._compileParameterList(srDecElement)  # parameterList
@@ -114,14 +120,14 @@ class compilationEngine:
         paramListElement = ET.SubElement(element, 'parameterList')
         while True:
             tag, text = self._current_element()
-            if text in ['int', 'char', 'boolean'] or type == 'identifier':
+            if text in ['int', 'char', 'boolean'] or tag == 'identifier':
                 self._add_xml(paramListElement)  # type
-                self._add_xml(paramListElement, kind='Argument', type=text)  # varName
+                self._add_xml(paramListElement, scope=self._current_subroutineName, kind='argument', type=text)  # varName
             elif text == ',':
                 _variable_type = self._next_text()
                 self._add_xml(paramListElement)  # ','
                 self._add_xml(paramListElement)  # type
-                self._add_xml(paramListElement, kind='Argument', type=_variable_type)  # varName
+                self._add_xml(paramListElement, scope=self._current_subroutineName, kind='argument', type=_variable_type)  # varName
             else:
                 break
 
@@ -146,14 +152,14 @@ class compilationEngine:
             tag, text = self._current_element() # kind = text
             if text == ',':
                 self._add_xml(varDecElement) # ','
-                self._add_xml(varDecElement, kind=_variable_kind, type=_variable_type) # varName
+                self._add_xml(varDecElement, scope=self._current_subroutineName, kind=_variable_kind, type=_variable_type) # varName
             elif text == ';':
                 self._add_xml(varDecElement) # ';'
                 break
             else:
                 self._add_xml(varDecElement) # var
                 self._add_xml(varDecElement) # type
-                self._add_xml(varDecElement, kind=_variable_kind, type=_variable_type) # varName
+                self._add_xml(varDecElement, scope=self._current_subroutineName, kind=_variable_kind, type=_variable_type) # varName
 
     def _compileStatements(self, element):
         statementsElement = ET.SubElement(element, 'statements')
