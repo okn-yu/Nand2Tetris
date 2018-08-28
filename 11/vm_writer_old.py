@@ -59,12 +59,12 @@ class VMWriter:
             _add_indent(indent_len)
             print('start %s' % func.__name__)
 
-            if args[1]:
+            if len(args) == 2:
                 _add_indent(indent_len+1)
-                print(args[1], end='')
-
-            if hasattr(args[1], 'itertext'):
-                print( [text.strip() for text in args[1].itertext() if text.strip()])
+                print(args[1])
+                if hasattr(args[1], 'itertext'):
+                    _add_indent(indent_len + 1)
+                    print( [text.strip() for text in args[1].itertext() if text.strip()])
             else:
                 print()
 
@@ -116,6 +116,7 @@ class VMWriter:
         assert kwElm.tag == 'keyword'
 
         subroutineNameElm = next(iter_elm)
+        self._subroutineName = subroutineNameElm.text.strip()
         assert subroutineNameElm.tag == 'identifier'
 
         symElm = next(iter_elm)
@@ -477,8 +478,8 @@ class VMWriter:
             self._vmLines.append('push' + ' ' + 'constant' + ' ' + str(var))
 
         elif type(var) is str:
-            kind = self._symbolTable.kind_of(var)
-            index = self._symbolTable.index_of(var)
+            kind = self._symbolTable.kind_of(self._subroutineName, var)
+            index = self._symbolTable.index_of(self._subroutineName, var)
             segment = self._get_segment(kind)
             self._vmLines.append('push' + ' ' + segment + ' ' + str(index))
 
@@ -495,8 +496,8 @@ class VMWriter:
             self._vmLines.append('pop' + ' ' + var + ' ' + str(0))
 
         elif type(var) is str:
-            kind = self._symbolTable.kind_of(var)
-            index = self._symbolTable.index_of(var)
+            kind = self._symbolTable.kind_of(self._subroutineName, var)
+            index = self._symbolTable.index_of(self._subroutineName, var)
             segment = self._get_segment(kind)
             self._vmLines.append('pop' + ' ' + segment + ' ' + str(index))
 
@@ -505,6 +506,8 @@ class VMWriter:
 
         if kind == 'var':
             return 'local'
+        if kind == 'argument':
+            return 'argument'
 
     @debug
     def _write_arithmetic(self, operator):
@@ -535,7 +538,6 @@ class VMWriter:
         if subroutine_name in const.VOID_SUBROUTINES:
             self._write_pop('temp')
 
-    @debug
     def _write_function(self):
         self._vmLines.insert(0, (
                 'function' + ' ' + self._fileName.split('.')[0] + '.' + self._subroutineName + ' ' + str(self._localVarCount)))
@@ -545,7 +547,6 @@ class VMWriter:
         self._write_push(0)
         self._vmLines.append('return')
 
-    @debug
     def _write_file(self):
 
         self._write_function()
