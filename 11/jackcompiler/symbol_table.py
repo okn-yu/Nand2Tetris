@@ -1,60 +1,45 @@
 class SymbolTable:
 
     def __init__(self):
+        self.symbol_tables = []
 
-        self.classTable = {}                                        # classTable['name'] = ('kind', 'type', index)
-        self.classIndex = 0
-        self.subroutineTable = {}                                   # classTable['name'] = ('kind', 'type', index)
-        self.subroutineIndex = 0
-        self.symbolTable = []
+    def define(self, scope, kind, type, var_name):
 
-    def define(self, kind, type, var):
+        var_count = self._var_count(scope)
 
-        pass
+        self.symbol_tables.append(
+            {
+                'scope_name': scope,
+                'kind': kind,
+                'type': type,
+                'var_name': var_name,
+                'count': var_count
+            }
+        )
 
-        # if scopeName in self.symbolTable:
-        #     scopeName = {}
-        #     scopeName[name] = (kind, type)
-        #     self.symbolTable.append(scopeName)
-        # else:
-        # for e in self._root.iter('identifier'):
-        #     if e.attrib:
-        #         name = e.text.strip()
-        #         scope = e.attrib['scope']
-        #         kind = e.attrib['kind']
-        #         type = e.attrib['type']
-        #
-        #         num = 0
-        #
-        #         for table in self.symbolTable:
-        #             if table[0] == scope:
-        #                 num += 1
-        #
-        #         self.symbolTable.append((scope, name, kind, type, num))
-        #
-        # print('symbolTable: %s' %  self.symbolTable)
+    def _var_count(self, scope):
 
-    def var_count(self, kind):
-        pass
-        # return Integer
+        var_count = 0
+
+        for table in self.symbol_tables:
+            if table['scope_name'] == scope:
+                var_count += 1
+
+        return var_count
 
     def kind_of(self, scope, name):
-        return self._search_symbol(scope, name)[2]
-        # return static, field, argument, var, none
+        for table in self.symbol_tables:
+            if table['scope_name'] == scope and table['var_name'] == name:
+                return table['kind']
 
     def type_of(self, scope, name):
-        return self._search_symbol(scope, name)[3]
-        # return int, char, boolean, className
+        for table in self.symbol_tables:
+            if table['scope_name'] == scope and table['var_name'] == name:
+                return table['type']
 
     def index_of(self, scope, name):
-        return self._search_symbol(scope, name)[4]
-        # return Integer
+        for table in self.symbol_tables:
+            if table['scope_name'] == scope and table['var_name'] == name:
+                return table['count']
 
-    def _search_symbol(self, scope, symbol):
-
-        tables = [tup for tup in self.symbolTable if tup[0] == scope]
-
-        for table in tables:
-            if symbol == table[1]:
-                return table
 
