@@ -512,7 +512,6 @@ class VMWriter:
     @debug
     def _write_arithmetic(self, operator):
 
-        if operator in ['+', '-', '<', '>']:
             operator = const.ARITHMETIC_OP_2_CMD[operator]
 
         self._vmLines.append(operator)
