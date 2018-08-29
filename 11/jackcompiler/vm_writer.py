@@ -1,3 +1,5 @@
+import os
+
 from jackcompiler import const
 
 class VMWriter():
@@ -28,18 +30,25 @@ class VMWriter():
         line = 'function' + ' ' + self._stripped_file_name + '.' + subroutine_name + ' ' + str(local_var_count)
         self._write_vm_file(line)
 
-    def write_push(self, var):
+    def write_push(self, var, index=None):
+
         if type(var) is int:
             line = 'push' + ' ' + 'constant' +  ' ' + str(var)
+        elif type(var) is str:
+            line = 'push' + ' ' + var + ' ' + str(index)
+        else:
+            raise SyntaxError
 
         self._write_vm_file(line)
 
     def write_return(self):
         self._write_vm_file('return')
 
-    def _write_vm_file(self, line):
-
+    def crear_vm_file(self):
         vm_file = self._stripped_file_path + '.vm'
+        os.remove(vm_file)
 
+    def _write_vm_file(self, line):
+        vm_file = self._stripped_file_path + '.vm'
         with open(vm_file, 'a') as f:
             f.write(str(line) + '\n')

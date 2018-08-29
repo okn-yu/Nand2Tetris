@@ -10,8 +10,10 @@ class compilationEngine:
         self.symbol_table = symbol_table
         self.vm_writer = vm_writer
         self._subroutine_name = ''
+        self._subroutine_scope = ''
         self._local_var_count = 0
 
+        self.vm_writer.crear_vm_file()
         self._compile_class()
         self._write_xml()
 
@@ -72,7 +74,7 @@ class compilationEngine:
         varName = self._current_txml_elm().text.strip()
         self._add_parse_tree_xml(classVarDecElement)
         
-        self.symbol_table.define(kind, type, varName)
+        self.symbol_table.define(self._subroutine_scope, kind, type, varName)
 
         while True:
             # (',' varName) * ';'
@@ -98,6 +100,7 @@ class compilationEngine:
 
         assert self._current_txml_elm().tag == 'identifier'
         self._subroutine_name = self._current_txml_elm().text.strip()
+        self._subroutine_scope = self._current_txml_elm().text.strip()
         self._add_parse_tree_xml(srDecElement)
         self.vm_writer.write_function(self._subroutine_name, self._local_var_count)
 
@@ -242,6 +245,7 @@ class compilationEngine:
         self._add_parse_tree_xml(letElement)
 
         assert self._current_txml_elm().tag == 'identifier'
+        varName = self._current_txml_elm().text.strip()
         self._add_parse_tree_xml(letElement)
 
         if self._current_txml_elm().text.strip() == '[':
@@ -255,6 +259,20 @@ class compilationEngine:
 
         assert self._current_txml_elm().text.strip() == ';'
         self._add_parse_tree_xml(letElement)
+
+        self._compile_let_var(varName)
+
+    def _compile_let_var(self, varName):
+
+        type = self.symbol_table.type_of(self._subroutine_scope, varName)
+        if type == 'Array':
+            seg = 'that'
+        else:
+            seg = 'local'
+
+        count = self.symbol_table.index_of(self._subroutine_scope, varName)
+        self.vm_writer.write_pop(seg, count)
+
 
     # while statement tokens:
     # 'while' '(' expression ')' '{' statements '}'
