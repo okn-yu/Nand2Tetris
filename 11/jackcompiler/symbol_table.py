@@ -27,11 +27,13 @@ class SymbolTable:
 
         return var_count
 
+    # name: 'static', 'field', 'arg', 'var'
     def kind_of(self, scope, name):
         for table in self.symbol_tables:
             if table['scope_name'] == scope and table['var_name'] == name:
                 return table['kind']
 
+    # type_ex: 'int', 'String', 'boolean' ...
     def type_of(self, scope, name):
         for table in self.symbol_tables:
             if table['scope_name'] == scope and table['var_name'] == name:
@@ -41,5 +43,9 @@ class SymbolTable:
         for table in self.symbol_tables:
             if table['scope_name'] == scope and table['var_name'] == name:
                 return table['count']
+
+    def count_of(self, scope):
+
+        return len([table for table in self.symbol_tables if table['scope_name'] == scope])
 
 

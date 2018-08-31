@@ -1,9 +1,9 @@
-import inspect
-import xml.etree.ElementTree as ET
-import xml.dom.minidom as minidom
-
-import const
-import symbol_table as st
+# import inspect
+# import xml.etree.ElementTree as ET
+# import xml.dom.minidom as minidom
+#
+# from jackcompiler import const
+# from jackcompiler import symbol_table as st
 
 # TODO: modify 'elm' -> 'topElm'
 
@@ -145,10 +145,8 @@ class VMWriter:
 
         for childElm in elm:
             tag, text = childElm.tag, childElm.text.strip()
-
             if tag == 'varDec':
                 self._parse_var_dec_elm(childElm)
-
             if tag == 'statements':
                 self._parse_statements_elm(childElm)
 

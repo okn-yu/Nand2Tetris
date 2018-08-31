@@ -19,6 +19,6 @@ if __name__ == "__main__":
 
     for jackFile in pathParser.jackFilesList:
         tokenizer = jt.jackTokenizer(jackFile)
-        vm_writer = vw.VMWriter(jackFile)
         symbol_table = st.SymbolTable()
+        vm_writer = vw.VMWriter(jackFile)
         ce.compilationEngine(tokenizer.outFilePath, symbol_table, vm_writer)
