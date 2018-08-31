@@ -1,4 +1,5 @@
 import os
+import inspect
 
 from jackcompiler import const
 
@@ -9,9 +10,10 @@ class VMWriter():
         self._stripped_file_path = jackFile_path.split('.')[0]
         # ex Seven/Main -> Main
         self._stripped_file_name = self._stripped_file_path.split('/')[-1]
+        self._line_number = 1
 
     def write_arithmetic(self, op):
-        if op in ['+', '-', '<', '>']:
+        if op in ['+', '-', '<', '>', '=']:
             op = const.ARITHMETIC_OP_2_CMD[op]
             self._write_vm_file(op)
         elif op == '*':
@@ -64,6 +66,15 @@ class VMWriter():
             os.remove(vm_file)
 
     def _write_vm_file(self, line):
+
+        def _indent(stack, indent=''):
+            for i in range(0, len(stack)):
+                indent += ' '
+            return indent
+
+        print(_indent(inspect.stack()), '[OUTPUT_CODE]:', self._line_number, line)
+        self._line_number += 1
+
         vm_file = self._stripped_file_path + '.vm'
         with open(vm_file, 'a') as f:
             f.write(str(line) + '\n')

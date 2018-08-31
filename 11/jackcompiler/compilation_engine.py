@@ -39,12 +39,23 @@ class compilationEngine:
                 indent += ' '
             return indent
 
-        def wrapper(*args, **kwargs):
-            print(_indent(inspect.stack()) + 'start %s' % func.__name__)
-            if len(args) == 2:
-                print(_indent(inspect.stack()), [text.strip() for text in args[1].itertext()])
+        def _argument(self):
 
-            returnValue = func(*args, **kwargs)
+            args_line = []
+
+            for i in range(self._current_txml_line_number, len(self._root_txml_element)):
+                # args_line.append(i)
+                args_line.append(self._root_txml_element[i].text.strip())
+
+            if len(args_line) > 20:
+                return args_line[0:20]
+            else:
+                return args_line
+
+        def wrapper(self, *args, **kwargs):
+            print(_indent(inspect.stack()) + 'start %s:' % func.__name__)
+            print(_indent(inspect.stack()), _argument(self))
+            returnValue = func(self, *args, **kwargs)
             print(_indent(inspect.stack()) + 'end %s ' % func.__name__)
             return returnValue
 
@@ -57,10 +68,28 @@ class compilationEngine:
         sub.text = ' ' + text + ' '
         self._current_txml_line_number += 1
 
+    def _tokens(self):
+
+        indent = ''
+        args_line = []
+
+        for i in range(0, len(inspect.stack())):
+            indent += ' '
+
+        for i in range(self._current_txml_line_number, len(self._root_txml_element)):
+            args_line.append(i)
+            args_line.append(self._root_txml_element[i].text.strip())
+
+        # if len(args_line) > 20:
+        #     print(indent, args_line[0:20], '...')
+        # else:
+        #     print(indent, args_line)
+
     # class tokens:
     # 'class' className '{' classVarDec* subroutineDec* '}'
     @debug
     def _compile_class(self):
+        self._tokens()
 
         assert self._current_txml_elm().text.strip() == 'class'
         self._add_parse_tree_xml(self._class_xml_element)
@@ -237,6 +266,8 @@ class compilationEngine:
     # statement*
     @debug
     def _compileStatements(self, element):
+        self._tokens()
+
         statementsElement = ET.SubElement(element, 'statements')
         while True:
             text = self._current_txml_elm().text.strip()
@@ -298,6 +329,7 @@ class compilationEngine:
     # 'let' varName ('[' expression ']')? '=' expression ';'
     @debug
     def _compileLet(self, element):
+        self._tokens()
         letElement = ET.SubElement(element, 'letStatement')
 
         let_statement_with_array = False
@@ -326,6 +358,7 @@ class compilationEngine:
         assert self._current_txml_elm().text.strip() == ';'
         self._add_parse_tree_xml(letElement)
 
+        # substitution
         if let_statement_with_array:
             self.vm_writer.write_pop('that', 0)
         else:
@@ -446,6 +479,11 @@ class compilationEngine:
         # KeywordConst
         elif text in ['true', 'false', 'null', 'this']:
             self._add_parse_tree_xml(termElement)
+            if text in ['null', 'false']:
+                self.vm_writer.write_push('constant', 0)
+            if text == 'true':
+                self.vm_writer.write_push('constant', 1)
+                self.vm_writer.write_arithmetic('neg')
         # unaryOp term
         elif text in ['-', '~']:
             self._add_parse_tree_xml(termElement)
@@ -517,7 +555,7 @@ class compilationEngine:
             return 'local'
 
         elif kind == 'arg':
-            return 'arg'
+            return 'argument'
 
     def _var_index(self, var):
         return self.symbol_table.index_of(self._subroutine_scope, var)
