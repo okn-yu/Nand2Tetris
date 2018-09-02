@@ -14,7 +14,6 @@ class compilationEngine:
         self.symbol_table = symbol_table
         self.vm_writer = vm_writer
         self._subroutine_name = ''
-        self._subroutine_scope = ''
         self.label_count = 0
 
         self.vm_writer.crear_vm_file()
@@ -91,7 +90,6 @@ class compilationEngine:
 
         assert self._current_txml_elm().tag == 'identifier'
         self._className = self._current_txml_elm().text.strip()
-        self._subroutine_scope = self._className
         self._add_parse_tree_xml(self._class_xml_element)
 
         assert self._current_txml_elm().text.strip() == '{'
@@ -128,7 +126,7 @@ class compilationEngine:
         varName = self._current_txml_elm().text.strip()
         self._add_parse_tree_xml(classVarDecElement)
 
-        self.symbol_table.define(self._subroutine_scope, kind, type, varName)
+        self.symbol_table.define(varName, kind, type)
 
         while True:
             # (',' varName) * ';'
@@ -137,7 +135,7 @@ class compilationEngine:
                 self._add_parse_tree_xml(classVarDecElement)
                 varName =  self._current_txml_elm().text.strip()
                 self._add_parse_tree_xml(classVarDecElement)
-                self.symbol_table.define(self._subroutine_scope, kind, type, varName)
+                self.symbol_table.define(varName, kind, type)
             else:
                 break
 
@@ -159,7 +157,6 @@ class compilationEngine:
 
         assert self._current_txml_elm().tag == 'identifier'
         self._subroutine_name = self._current_txml_elm().text.strip()
-        self._subroutine_scope = self._current_txml_elm().text.strip()
         self._add_parse_tree_xml(srDecElement)
 
         assert self._current_txml_elm().text.strip() == '('
@@ -188,7 +185,7 @@ class compilationEngine:
                 varName = self._current_txml_elm().text.strip()
                 self._add_parse_tree_xml(paramListElement)  # varName
 
-                self.symbol_table.define(self._subroutine_scope, kind, type, varName)
+                self.symbol_table.define(varName, kind, type)
 
             # ',' type varName
             elif self._current_txml_elm().text.strip() == ',':
@@ -202,7 +199,7 @@ class compilationEngine:
 
                 self._add_parse_tree_xml(paramListElement)  # varName
 
-                self.symbol_table.define(self._subroutine_scope, kind, type, varName)
+                self.symbol_table.define(varName, kind, type)
 
             else:
                 break
@@ -216,6 +213,8 @@ class compilationEngine:
         assert self._current_txml_elm().text.strip() == '{'
         self._add_parse_tree_xml(srBodyElement)
 
+        self._local_var_count = 0
+
         while True:
             # varDec
             if self._current_txml_elm().text.strip() == 'var':
@@ -223,7 +222,7 @@ class compilationEngine:
             else:
                 break
 
-        self.vm_writer.write_function(self._subroutine_name, self.symbol_table.varCount(self._subroutine_scope))
+        self.vm_writer.write_function(self._subroutine_name, self.symbol_table.var_count('var'))
 
         while True:
             # statements
@@ -252,14 +251,14 @@ class compilationEngine:
         varName = self._current_txml_elm().text.strip()
         self._add_parse_tree_xml(varDecElement)
 
-        self.symbol_table.define(self._subroutine_name, 'var', type, varName)
+        self.symbol_table.define(varName, 'var', type)
 
         while True:
             if self._current_txml_elm().text.strip() == ',':
                 self._add_parse_tree_xml(varDecElement)
                 varName = self._current_txml_elm().text.strip()
                 self._add_parse_tree_xml(varDecElement)
-                self.symbol_table.define(self._subroutine_name, 'var', type, varName)
+                self.symbol_table.define(varName, 'var', type)
             else:
                 break
 
@@ -557,7 +556,7 @@ class compilationEngine:
                 break
 
     def _var_seg(self, var):
-        kind =  self.symbol_table.kind_of(self._subroutine_scope, var)
+        kind =  self.symbol_table.kind_of(var)
 
         if kind == 'var':
             return 'local'
@@ -569,7 +568,7 @@ class compilationEngine:
             raise SyntaxError
 
     def _var_index(self, var):
-        return self.symbol_table.index_of(self._subroutine_scope, var)
+        return self.symbol_table.index_of(var)
 
     def _edit_xml_string(self):
         pretty_string = minidom.parseString(self._xmlString).toprettyxml(indent='  ')
