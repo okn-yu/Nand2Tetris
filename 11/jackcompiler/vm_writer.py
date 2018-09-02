@@ -13,7 +13,7 @@ class VMWriter():
         self._line_number = 1
 
     def write_arithmetic(self, op):
-        if op in ['+', '-', '<', '>', '=']:
+        if op in ['+', '-', '<', '>', '=', '&']:
             op = const.ARITHMETIC_OP_2_CMD[op]
             self._write_vm_file(op)
         elif op == '*':
@@ -72,7 +72,7 @@ class VMWriter():
                 indent += ' '
             return indent
 
-        print(_indent(inspect.stack()), '[OUTPUT_CODE]:', self._line_number, line)
+        print(_indent(inspect.stack()), '[OUTPUT_CODE line:%s %s]' %(self._line_number, line))
         self._line_number += 1
 
         vm_file = self._stripped_file_path + '.vm'

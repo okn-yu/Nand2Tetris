@@ -1,7 +1,14 @@
 class SymbolTable:
 
     def __init__(self):
-        self.symbol_tables = []
+        self._class_symbol_table = []
+        self._subroutine_symbol_table = []
+
+    # あるサブルーチン内部では別サブルーチンのローカル変数を参照することはない。
+    # そのためシンボルテーブルはクラス用と現在処理しているサブルーチン内部の2種類のみで良い。
+
+    def start_subroutine(self):
+        self._subroutine_symbol_table = []
 
     def define(self, scope, kind, type, var_name):
 
@@ -44,8 +51,6 @@ class SymbolTable:
             if table['scope_name'] == scope and table['var_name'] == name:
                 return table['count']
 
-    def count_of(self, scope):
-
-        return len([table for table in self.symbol_tables if table['scope_name'] == scope])
-
-
+    def varCount(self, scope):
+        return len(
+            [table for table in self.symbol_tables if (table['scope_name'] == scope and (table['kind'] != 'field'))])

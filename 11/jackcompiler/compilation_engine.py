@@ -80,11 +80,6 @@ class compilationEngine:
             args_line.append(i)
             args_line.append(self._root_txml_element[i].text.strip())
 
-        # if len(args_line) > 20:
-        #     print(indent, args_line[0:20], '...')
-        # else:
-        #     print(indent, args_line)
-
     # class tokens:
     # 'class' className '{' classVarDec* subroutineDec* '}'
     @debug
@@ -96,6 +91,7 @@ class compilationEngine:
 
         assert self._current_txml_elm().tag == 'identifier'
         self._className = self._current_txml_elm().text.strip()
+        self._subroutine_scope = self._className
         self._add_parse_tree_xml(self._class_xml_element)
 
         assert self._current_txml_elm().text.strip() == '{'
@@ -104,7 +100,11 @@ class compilationEngine:
         while True:
             if self._current_txml_elm().text.strip() in ['static', 'field']:
                 self._compileClassVarDec(self._class_xml_element)
-            elif self._current_txml_elm().text.strip() in ['constructor', 'function', 'method']:
+            else:
+                break
+
+        while True:
+            if self._current_txml_elm().text.strip() in ['constructor', 'function', 'method']:
                 self._compileSubroutine(self._class_xml_element)
             else:
                 break
@@ -132,13 +132,17 @@ class compilationEngine:
 
         while True:
             # (',' varName) * ';'
-            tag, text = self._current_txml_elm()
-            if self._current_txml_elm().text.strip() == ',':
+            text = self._current_txml_elm().text.strip()
+            if  text == ',':
                 self._add_parse_tree_xml(classVarDecElement)
+                varName =  self._current_txml_elm().text.strip()
                 self._add_parse_tree_xml(classVarDecElement)
+                self.symbol_table.define(self._subroutine_scope, kind, type, varName)
             else:
-                self._add_parse_tree_xml(classVarDecElement)
                 break
+
+        assert self._current_txml_elm().text.strip()  == ';'
+        self._add_parse_tree_xml(classVarDecElement)
 
     # subroutine token:
     # ('constructor' | 'function' | 'method') ('void' | type) subroutineName '(' parameterList ')' subrutineBody
@@ -219,7 +223,7 @@ class compilationEngine:
             else:
                 break
 
-        self.vm_writer.write_function(self._subroutine_name, self.symbol_table.count_of(self._subroutine_scope))
+        self.vm_writer.write_function(self._subroutine_name, self.symbol_table.varCount(self._subroutine_scope))
 
         while True:
             # statements
@@ -348,7 +352,9 @@ class compilationEngine:
             self._compileExpression(letElement)
             self._add_parse_tree_xml(letElement)
             self.vm_writer.write_arithmetic('+')
-            self.vm_writer.write_pop('pointer', 1)
+            # self.vm_writer.write_pop('pointer', 1)
+            self.vm_writer.write_pop('temp', 0)
+
 
         assert self._current_txml_elm().text.strip() == '='
         self._add_parse_tree_xml(letElement)
@@ -360,6 +366,8 @@ class compilationEngine:
 
         # substitution
         if let_statement_with_array:
+            self.vm_writer.write_push('temp', 0)
+            self.vm_writer.write_pop('pointer', 1)
             self.vm_writer.write_pop('that', 0)
         else:
             self.vm_writer.write_pop(self._var_seg(varName), self._var_index(varName))
@@ -553,9 +561,12 @@ class compilationEngine:
 
         if kind == 'var':
             return 'local'
-
         elif kind == 'arg':
             return 'argument'
+        elif kind == 'field':
+            return  ''
+        else:
+            raise SyntaxError
 
     def _var_index(self, var):
         return self.symbol_table.index_of(self._subroutine_scope, var)
