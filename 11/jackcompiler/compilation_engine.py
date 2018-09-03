@@ -102,8 +102,8 @@ class compilationEngine:
 
         # subroutineDec*
         while True:
-            self._subroutine_type = self._current_txml_elm().text.strip()
-            if self._subroutine_type in ['constructor', 'function', 'method']:
+            text = self._current_txml_elm().text.strip()
+            if text in ['constructor', 'function', 'method']:
                 self.symbol_table.start_subroutine()
                 self._compileSubroutine(self._class_xml_element)
             else:
@@ -151,7 +151,8 @@ class compilationEngine:
 
         srDecElement = ET.SubElement(element, 'subroutineDec')
 
-        assert self._current_txml_elm().text.strip() in ['constructor', 'function', 'method']
+        self._subroutine_kind = self._current_txml_elm().text.strip()
+        assert self._subroutine_kind in ['constructor', 'function', 'method']
         self._add_parse_tree_xml(srDecElement)
 
         assert self._current_txml_elm().tag in ['identifier', 'keyword']
@@ -224,9 +225,14 @@ class compilationEngine:
 
         # TODO: use method!
         self.vm_writer.write_function(self._subroutine_name, self.symbol_table.var_count('var'))
-        if self._subroutine_type == 'constructor':
+        if self._subroutine_kind == 'constructor':
             self.vm_writer.write_push('constant', self.symbol_table.var_count('field'))
             self.vm_writer.write_call('Memory.alloc', 1)
+            self.vm_writer.write_pop('pointer', 0)
+
+        # in method, 1st arg 'self' is added implicitly.
+        if self._subroutine_kind == 'method':
+            self.vm_writer.write_push('argument', 0)
             self.vm_writer.write_pop('pointer', 0)
 
         while True:
@@ -311,13 +317,15 @@ class compilationEngine:
     def _compileSubroutineCall(self, element):
         
         self._subroutine_call_name = ''
+        self._subroutine_call_type = ''
         self._expression_count = 0
 
         # subroutineName -> call method.
         if self._next_txml_elm().text.strip() == '(':
             self._subroutine_call_name = self._className + '.' + self._current_txml_elm().text.strip()
             self._add_parse_tree_xml(element)
-            # in method, 1st arg 'self' is called implicitly.
+            # in method, 1st arg 'self' is added implicitly.
+            self._subroutine_call_type = 'method'
             self._expression_count += 1
         # className or varName '.' subroutineName -> call function or constructor
         elif self._next_txml_elm().text.strip() == '.':
@@ -339,10 +347,12 @@ class compilationEngine:
         self._add_parse_tree_xml(element)
 
         # method show be used with object.
-        if self._subroutine_type == 'method':
-            self.vm_writer.write_pop('pointer', 1)
+        if self._subroutine_call_type == 'method':
+            self.vm_writer.write_push('pointer', 0)
 
         self.vm_writer.write_call(self._subroutine_call_name, self._expression_count)
+
+        # TODO: check void!
 
     # letStatement tokens:
     # 'let' varName ('[' expression ']')? '=' expression ';'
@@ -434,6 +444,7 @@ class compilationEngine:
     @debug
     def _compileReturn(self, element):
         returnElement = ET.SubElement(element, 'returnStatement')
+
         # 'return'
         self._add_parse_tree_xml(returnElement)
 
@@ -514,6 +525,8 @@ class compilationEngine:
             if text == 'true':
                 self.vm_writer.write_push('constant', 1)
                 self.vm_writer.write_arithmetic('neg')
+            if text == 'this':
+                self.vm_writer.write_push('pointer', 0)
         # unaryOp term
         elif text in ['-', '~']:
             self._add_parse_tree_xml(termElement)
