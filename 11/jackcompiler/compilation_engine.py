@@ -311,11 +311,14 @@ class compilationEngine:
     def _compileSubroutineCall(self, element):
         
         self._subroutine_call_name = ''
+        self._expression_count = 0
 
         # subroutineName -> call method.
         if self._next_txml_elm().text.strip() == '(':
             self._subroutine_call_name = self._className + '.' + self._current_txml_elm().text.strip()
             self._add_parse_tree_xml(element)
+            # in method, 1st arg 'self' is called implicitly.
+            self._expression_count += 1
         # className or varName '.' subroutineName -> call function or constructor
         elif self._next_txml_elm().text.strip() == '.':
             self._subroutine_call_name = self._current_txml_elm().text.strip()
@@ -334,6 +337,10 @@ class compilationEngine:
 
         assert self._current_txml_elm().text.strip() == ')'
         self._add_parse_tree_xml(element)
+
+        # method show be used with object.
+        if self._subroutine_type == 'method':
+            self.vm_writer.write_pop('pointer', 1)
 
         self.vm_writer.write_call(self._subroutine_call_name, self._expression_count)
 
@@ -554,7 +561,6 @@ class compilationEngine:
     @debug
     def _compileExpressionList(self, element):
         expListElement = ET.SubElement(element, 'expressionList')
-        self._expression_count = 0
 
         while True:
             text = self._current_txml_elm().text.strip()
