@@ -23,9 +23,9 @@ class VMWriter():
         else:
             self._write_vm_file(op)
 
-    def write_call(self, function_name):
-        arg = const.API_ARG[function_name]
-        line = 'call' + ' ' + function_name + ' ' + arg
+    def write_call(self, function_name, arg_count):
+        # arg = const.API_ARG[function_name]
+        line = 'call' + ' ' + function_name + ' ' + str(arg_count)
         self._write_vm_file(line)
 
         if function_name in const.VOID_SUBROUTINES:

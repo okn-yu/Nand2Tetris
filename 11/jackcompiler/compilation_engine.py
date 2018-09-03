@@ -13,8 +13,6 @@ class compilationEngine:
         self._class_xml_element = ET.Element('class')
         self.symbol_table = symbol_table
         self.vm_writer = vm_writer
-        self._subroutine_name = ''
-        self.label_count = 0
 
         self.vm_writer.crear_vm_file()
         self._compile_class()
@@ -95,14 +93,18 @@ class compilationEngine:
         assert self._current_txml_elm().text.strip() == '{'
         self._add_parse_tree_xml(self._class_xml_element)
 
+        # classVarDec*
         while True:
             if self._current_txml_elm().text.strip() in ['static', 'field']:
                 self._compileClassVarDec(self._class_xml_element)
             else:
                 break
 
+        # subroutineDec*
         while True:
-            if self._current_txml_elm().text.strip() in ['constructor', 'function', 'method']:
+            self._subroutine_type = self._current_txml_elm().text.strip()
+            if self._subroutine_type in ['constructor', 'function', 'method']:
+                self.symbol_table.start_subroutine()
                 self._compileSubroutine(self._class_xml_element)
             else:
                 break
@@ -213,8 +215,6 @@ class compilationEngine:
         assert self._current_txml_elm().text.strip() == '{'
         self._add_parse_tree_xml(srBodyElement)
 
-        self._local_var_count = 0
-
         while True:
             # varDec
             if self._current_txml_elm().text.strip() == 'var':
@@ -222,7 +222,12 @@ class compilationEngine:
             else:
                 break
 
+        # TODO: use method!
         self.vm_writer.write_function(self._subroutine_name, self.symbol_table.var_count('var'))
+        if self._subroutine_type == 'constructor':
+            self.vm_writer.write_push('constant', self.symbol_table.var_count('field'))
+            self.vm_writer.write_call('Memory.alloc', 1)
+            self.vm_writer.write_pop('pointer', 0)
 
         while True:
             # statements
@@ -270,6 +275,7 @@ class compilationEngine:
     @debug
     def _compileStatements(self, element):
         self._tokens()
+        self._label_count = 0
 
         statementsElement = ET.SubElement(element, 'statements')
         while True:
@@ -303,16 +309,19 @@ class compilationEngine:
     # subroutineName '(' expressionList ')' | (className | varName) '.' subroutineName '(' expressionList ')'
     @debug
     def _compileSubroutineCall(self, element):
-        # subroutineName
+        
+        self._subroutine_call_name = ''
+
+        # subroutineName -> call method.
         if self._next_txml_elm().text.strip() == '(':
-            self._subroutine_name = self._current_txml_elm().text.strip()
+            self._subroutine_call_name = self._className + '.' + self._current_txml_elm().text.strip()
             self._add_parse_tree_xml(element)
-        # className or varName '.' subroutineName
+        # className or varName '.' subroutineName -> call function or constructor
         elif self._next_txml_elm().text.strip() == '.':
-            self._subroutine_name = self._current_txml_elm().text.strip()
+            self._subroutine_call_name = self._current_txml_elm().text.strip()
             self._add_parse_tree_xml(element)
             self._add_parse_tree_xml(element)
-            self._subroutine_name += '.' + self._current_txml_elm().text.strip()
+            self._subroutine_call_name += '.' + self._current_txml_elm().text.strip()
             self._add_parse_tree_xml(element)
         else:
             raise SyntaxError
@@ -326,7 +335,7 @@ class compilationEngine:
         assert self._current_txml_elm().text.strip() == ')'
         self._add_parse_tree_xml(element)
 
-        self.vm_writer.write_call(self._subroutine_name)
+        self.vm_writer.write_call(self._subroutine_call_name, self._expression_count)
 
     # letStatement tokens:
     # 'let' varName ('[' expression ']')? '=' expression ';'
@@ -363,11 +372,18 @@ class compilationEngine:
         assert self._current_txml_elm().text.strip() == ';'
         self._add_parse_tree_xml(letElement)
 
+        # TODO: use method!
         # substitution
         if let_statement_with_array:
             self.vm_writer.write_push('temp', 0)
-            self.vm_writer.write_pop('pointer', 1)
-            self.vm_writer.write_pop('that', 0)
+            if self.symbol_table.kind_of(varName) == 'var':
+                self.vm_writer.write_pop('pointer', 1)
+                self.vm_writer.write_pop('that', 0)
+            elif self.symbol_table.kind_of(varName) == 'field':
+                self.vm_writer.write_pop('pointer', 0)
+                self.vm_writer.write_pop('this', 0)
+            else:
+                raise SyntaxError
         else:
             self.vm_writer.write_pop(self._var_seg(varName), self._var_index(varName))
 
@@ -380,7 +396,7 @@ class compilationEngine:
         assert self._current_txml_elm().text.strip() == 'while'
         self._add_parse_tree_xml(whileElement)
 
-        self.vm_writer.write_label('WHILE_EXP', self.label_count)
+        self.vm_writer.write_label('WHILE_EXP', self._label_count)
 
         assert self._current_txml_elm().text.strip() == '('
         self._add_parse_tree_xml(whileElement)
@@ -388,7 +404,7 @@ class compilationEngine:
         self._compileExpression(whileElement)
 
         self.vm_writer.write_arithmetic('not')
-        self.vm_writer.write_if('WHILE_END', self.label_count)
+        self.vm_writer.write_if('WHILE_END', self._label_count)
 
         assert self._current_txml_elm().text.strip() == ')'
         self._add_parse_tree_xml(whileElement)
@@ -398,13 +414,13 @@ class compilationEngine:
 
         self._compileStatements(whileElement)
 
-        self.vm_writer.write_goto('WHILE_EXP', self.label_count)
-        self.vm_writer.write_label('WHILE_END', self.label_count)
+        self.vm_writer.write_goto('WHILE_EXP', self._label_count)
+        self.vm_writer.write_label('WHILE_END', self._label_count)
 
         assert self._current_txml_elm().text.strip() == '}'
         self._add_parse_tree_xml(whileElement)
 
-        self.label_count += 1
+        self._label_count += 1
 
     # return statement tokens:
     # 'return' expression? ';'
@@ -538,12 +554,15 @@ class compilationEngine:
     @debug
     def _compileExpressionList(self, element):
         expListElement = ET.SubElement(element, 'expressionList')
+        self._expression_count = 0
+
         while True:
             text = self._current_txml_elm().text.strip()
             tag = self._current_txml_elm().tag
             if text == ',':
                 self._add_parse_tree_xml(expListElement)
                 self._compileExpression(expListElement)
+                self._expression_count += 1
             # expression
             elif tag == 'integerConstant' or tag == 'stringConstant' \
                     or text in ['true', 'false', 'null', 'this'] \
@@ -552,6 +571,7 @@ class compilationEngine:
                     or text in ['-', '~'] \
                     or text in ['(']:
                 self._compileExpression(expListElement)
+                self._expression_count += 1
             else:
                 break
 
@@ -563,7 +583,7 @@ class compilationEngine:
         elif kind == 'arg':
             return 'argument'
         elif kind == 'field':
-            return  ''
+            return  'this'
         else:
             raise SyntaxError
 
@@ -592,4 +612,3 @@ class compilationEngine:
 
         with open(outFilePath, 'w') as f:
             f.write(self._xmlString)
-
