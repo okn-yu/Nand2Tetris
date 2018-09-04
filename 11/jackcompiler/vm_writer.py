@@ -10,7 +10,10 @@ class VMWriter():
         self._stripped_file_path = jackFile_path.split('.')[0]
         # ex Seven/Main -> Main
         self._stripped_file_name = self._stripped_file_path.split('/')[-1]
+
         self._line_number = 1
+        self._label_count = 0
+        self._label_index = 0
 
     def write_arithmetic(self, op):
         if op in ['+', '-', '<', '>', '=', '&']:
@@ -64,6 +67,18 @@ class VMWriter():
         vm_file = self._stripped_file_path + '.vm'
         if os.path.isfile(vm_file):
             os.remove(vm_file)
+
+    def _add_index(self):
+        self._label_count += 1
+        self._label_index = self._label_count
+        return self._label_index
+
+    def _dec_index(self):
+        self._label_index -= 1
+        return self._label_index
+
+    def _ref_index(self):
+        return self._label_index
 
     def _write_vm_file(self, line):
 

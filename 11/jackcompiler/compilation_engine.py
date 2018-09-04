@@ -65,23 +65,23 @@ class compilationEngine:
         sub.text = ' ' + text + ' '
         self._current_txml_line_number += 1
 
-    def _tokens(self):
-
-        indent = ''
-        args_line = []
-
-        for i in range(0, len(inspect.stack())):
-            indent += ' '
-
-        for i in range(self._current_txml_line_number, len(self._root_txml_element)):
-            args_line.append(i)
-            args_line.append(self._root_txml_element[i].text.strip())
+    # def _tokens(self):
+    #
+    #     indent = ''
+    #     args_line = []
+    #
+    #     for i in range(0, len(inspect.stack())):
+    #         indent += ' '
+    #
+    #     for i in range(self._current_txml_line_number, len(self._root_txml_element)):
+    #         args_line.append(i)
+    #         args_line.append(self._root_txml_element[i].text.strip())
 
     # class tokens:
     # 'class' className '{' classVarDec* subroutineDec* '}'
     @debug
     def _compile_class(self):
-        self._tokens()
+        # self._tokens()
 
         assert self._current_txml_elm().text.strip() == 'class'
         self._add_parse_tree_xml(self._class_xml_element)
@@ -101,6 +101,7 @@ class compilationEngine:
                 break
 
         # subroutineDec*
+        self._label_count = 0
         while True:
             text = self._current_txml_elm().text.strip()
             if text in ['constructor', 'function', 'method']:
@@ -156,6 +157,7 @@ class compilationEngine:
         self._add_parse_tree_xml(srDecElement)
 
         assert self._current_txml_elm().tag in ['identifier', 'keyword']
+        self._subroutine_type = self._current_txml_elm().text.strip()
         self._add_parse_tree_xml(srDecElement)
 
         assert self._current_txml_elm().tag == 'identifier'
@@ -280,9 +282,7 @@ class compilationEngine:
     # statement*
     @debug
     def _compileStatements(self, element):
-        self._tokens()
-        self._label_count = 0
-
+        # self._tokens()
         statementsElement = ET.SubElement(element, 'statements')
         while True:
             text = self._current_txml_elm().text.strip()
@@ -304,10 +304,16 @@ class compilationEngine:
     @debug
     def _compileDo(self, element):
         doElement = ET.SubElement(element, 'doStatement')
+        
         # 'do'
         self._add_parse_tree_xml(doElement)
         # subroutineCall
         self._compileSubroutineCall(doElement)
+
+        # TODO: update self._subroutine_call_type!
+        if self._subroutine_call_type == 'void':
+            self.vm_writer.write_pop('pointer', 0)
+
         # ';'
         self._add_parse_tree_xml(doElement)
 
@@ -317,19 +323,32 @@ class compilationEngine:
     def _compileSubroutineCall(self, element):
         
         self._subroutine_call_name = ''
+        self._subroutine_call_kind = ''
         self._subroutine_call_type = ''
         self._expression_count = 0
 
-        # subroutineName -> call method.
+        # subroutineName -> self.subroutine_name is always 'method'!
         if self._next_txml_elm().text.strip() == '(':
             self._subroutine_call_name = self._className + '.' + self._current_txml_elm().text.strip()
             self._add_parse_tree_xml(element)
             # in method, 1st arg 'self' is added implicitly.
-            self._subroutine_call_type = 'method'
+            self._subroutine_call_kind = 'method'
             self._expression_count += 1
-        # className or varName '.' subroutineName -> call function or constructor
+
+        # className or varName '.' subroutineName
+        # TODO: check className or varName!
         elif self._next_txml_elm().text.strip() == '.':
             self._subroutine_call_name = self._current_txml_elm().text.strip()
+
+            # call method.
+            # className not in symbol_table.
+            if self.symbol_table.resolve_var(self._subroutine_call_name):
+                varName = self._subroutine_call_name
+                self.vm_writer.write_push(self._var_seg(varName), self._var_index(varName))
+                self._expression_count += 1
+                self._subroutine_call_name = self.symbol_table.type_of(varName)
+
+            # call function or constructor.
             self._add_parse_tree_xml(element)
             self._add_parse_tree_xml(element)
             self._subroutine_call_name += '.' + self._current_txml_elm().text.strip()
@@ -346,19 +365,17 @@ class compilationEngine:
         assert self._current_txml_elm().text.strip() == ')'
         self._add_parse_tree_xml(element)
 
-        # method show be used with object.
-        if self._subroutine_call_type == 'method':
+        # When call method defined "in File", object should be exist in stack!
+        if self._subroutine_call_kind == 'method':
             self.vm_writer.write_push('pointer', 0)
 
         self.vm_writer.write_call(self._subroutine_call_name, self._expression_count)
-
-        # TODO: check void!
 
     # letStatement tokens:
     # 'let' varName ('[' expression ']')? '=' expression ';'
     @debug
     def _compileLet(self, element):
-        self._tokens()
+        # self._tokens()
         letElement = ET.SubElement(element, 'letStatement')
 
         let_statement_with_array = False
@@ -379,7 +396,6 @@ class compilationEngine:
             self.vm_writer.write_arithmetic('+')
             # self.vm_writer.write_pop('pointer', 1)
             self.vm_writer.write_pop('temp', 0)
-
 
         assert self._current_txml_elm().text.strip() == '='
         self._add_parse_tree_xml(letElement)
@@ -458,10 +474,13 @@ class compilationEngine:
             or text in ['-', '~'] \
             or text in ['(']:
             self._compileExpression(returnElement)
+        # if void, return 0.
         else:
-            # if void, return 0.
+            assert self._subroutine_type == 'void'
             self.vm_writer.write_push('constant', 0)
+
         # ';'
+        assert self._current_txml_elm().text.strip() == ';'
         self._add_parse_tree_xml(returnElement)
         self.vm_writer.write_return()
 
@@ -473,16 +492,27 @@ class compilationEngine:
         self._add_parse_tree_xml(ifElement)  # 'if'
         self._add_parse_tree_xml(ifElement)  # '('
         self._compileExpression(ifElement)  # expression
+        self.vm_writer.write_if('IF_TRUE', self._label_count)
+        self.vm_writer.write_goto('IF_FALSE', self._label_count)
         self._add_parse_tree_xml(ifElement)  # ')'
         self._add_parse_tree_xml(ifElement)  # '{'
+        self.vm_writer.write_label('IF_TRUE', self._label_count)
         self._compileStatements(ifElement)  # statements
+
+        if self._next_txml_elm().text.strip() == 'else':
+            self.vm_writer.write_goto('IF_END', self._label_count)
+
         self._add_parse_tree_xml(ifElement)  # '}'
+        self.vm_writer.write_label('IF_FALSE', self._label_count)
 
         if self._current_txml_elm().text.strip() == 'else':
             self._add_parse_tree_xml(ifElement)  # 'else'
             self._add_parse_tree_xml(ifElement)  # '{'
             self._compileStatements(ifElement)  # statements
             self._add_parse_tree_xml(ifElement)  # '}'
+            self.vm_writer.write_label('IF_END', self._label_count)
+
+        self._label_count += 1
 
     # expression tokens:
     # term (op term)*

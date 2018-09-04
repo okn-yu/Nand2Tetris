@@ -36,16 +36,16 @@ class SymbolTable:
 
     # name: 'static', 'field', 'arg', 'var'
     def kind_of(self, name):
-        return self._resolve_var(name)['kind']
+        return self.resolve_var(name)['kind']
 
     # type_ex: 'int', 'String', 'boolean' ...
     def type_of(self, name):
-        return self._resolve_var(name)['type']
+        return self.resolve_var(name)['type']
 
     def index_of(self, var_name):
-        return self._resolve_var(var_name)['index']
+        return self.resolve_var(var_name)['index']
 
-    def _resolve_var(self, var_name):
+    def resolve_var(self, var_name):
         for column in self._subroutine_symbol_table:
             if column['name'] == var_name:
                 return column
@@ -53,3 +53,5 @@ class SymbolTable:
         for column in self._class_symbol_table:
             if column['name'] == var_name:
                 return column
+        
+        return None
