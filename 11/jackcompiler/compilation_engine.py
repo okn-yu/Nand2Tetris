@@ -101,7 +101,6 @@ class compilationEngine:
                 break
 
         # subroutineDec*
-        self._label_count = 0
         while True:
             text = self._current_txml_elm().text.strip()
             if text in ['constructor', 'function', 'method']:
@@ -429,7 +428,7 @@ class compilationEngine:
         assert self._current_txml_elm().text.strip() == 'while'
         self._add_parse_tree_xml(whileElement)
 
-        self.vm_writer.write_label('WHILE_EXP', self._label_count)
+        self.vm_writer.write_label('WHILE_EXP')
 
         assert self._current_txml_elm().text.strip() == '('
         self._add_parse_tree_xml(whileElement)
@@ -437,7 +436,7 @@ class compilationEngine:
         self._compileExpression(whileElement)
 
         self.vm_writer.write_arithmetic('not')
-        self.vm_writer.write_if('WHILE_END', self._label_count)
+        self.vm_writer.write_if('WHILE_END')
 
         assert self._current_txml_elm().text.strip() == ')'
         self._add_parse_tree_xml(whileElement)
@@ -447,13 +446,11 @@ class compilationEngine:
 
         self._compileStatements(whileElement)
 
-        self.vm_writer.write_goto('WHILE_EXP', self._label_count)
-        self.vm_writer.write_label('WHILE_END', self._label_count)
+        self.vm_writer.write_goto('WHILE_EXP')
+        self.vm_writer.write_label('WHILE_END')
 
         assert self._current_txml_elm().text.strip() == '}'
         self._add_parse_tree_xml(whileElement)
-
-        self._label_count += 1
 
     # return statement tokens:
     # 'return' expression? ';'
@@ -492,27 +489,26 @@ class compilationEngine:
         self._add_parse_tree_xml(ifElement)  # 'if'
         self._add_parse_tree_xml(ifElement)  # '('
         self._compileExpression(ifElement)  # expression
-        self.vm_writer.write_if('IF_TRUE', self._label_count)
-        self.vm_writer.write_goto('IF_FALSE', self._label_count)
+        self.vm_writer.write_if('IF_TRUE')
+        self.vm_writer.write_goto('IF_FALSE')
         self._add_parse_tree_xml(ifElement)  # ')'
         self._add_parse_tree_xml(ifElement)  # '{'
-        self.vm_writer.write_label('IF_TRUE', self._label_count)
+        self.vm_writer.write_label('IF_TRUE')
         self._compileStatements(ifElement)  # statements
 
         if self._next_txml_elm().text.strip() == 'else':
-            self.vm_writer.write_goto('IF_END', self._label_count)
+            self.vm_writer.write_goto('IF_END')
 
         self._add_parse_tree_xml(ifElement)  # '}'
-        self.vm_writer.write_label('IF_FALSE', self._label_count)
+        self.vm_writer.write_label('IF_FALSE')
 
         if self._current_txml_elm().text.strip() == 'else':
             self._add_parse_tree_xml(ifElement)  # 'else'
             self._add_parse_tree_xml(ifElement)  # '{'
             self._compileStatements(ifElement)  # statements
             self._add_parse_tree_xml(ifElement)  # '}'
-            self.vm_writer.write_label('IF_END', self._label_count)
 
-        self._label_count += 1
+        self.vm_writer.write_label('IF_END')
 
     # expression tokens:
     # term (op term)*
