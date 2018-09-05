@@ -309,9 +309,8 @@ class compilationEngine:
         # subroutineCall
         self._compileSubroutineCall(doElement)
 
-        # TODO: update self._subroutine_call_type!
-        if self._subroutine_call_type == 'void':
-            self.vm_writer.write_pop('pointer', 0)
+        # In do-statement, return value never refered. so always 'pop temp 0'
+        self.vm_writer.write_pop('temp', 0)
 
         # ';'
         self._add_parse_tree_xml(doElement)
@@ -388,18 +387,21 @@ class compilationEngine:
 
         if self._current_txml_elm().text.strip() == '[':
             let_statement_with_array = True
-            self.vm_writer.write_push(self._var_seg(varName), self._var_index(varName))
             self._add_parse_tree_xml(letElement)
             self._compileExpression(letElement)
+            self.vm_writer.write_push(self._var_seg(varName), self._var_index(varName))
             self._add_parse_tree_xml(letElement)
             self.vm_writer.write_arithmetic('+')
             # self.vm_writer.write_pop('pointer', 1)
-            self.vm_writer.write_pop('temp', 0)
+            # self.vm_writer.write_pop('temp', 0)
 
         assert self._current_txml_elm().text.strip() == '='
         self._add_parse_tree_xml(letElement)
 
         self._compileExpression(letElement)
+
+        if let_statement_with_array:
+            self.vm_writer.write_pop('temp', 0)
 
         assert self._current_txml_elm().text.strip() == ';'
         self._add_parse_tree_xml(letElement)
@@ -407,15 +409,9 @@ class compilationEngine:
         # TODO: use method!
         # substitution
         if let_statement_with_array:
+            self.vm_writer.write_pop('pointer', 1)
             self.vm_writer.write_push('temp', 0)
-            if self.symbol_table.kind_of(varName) == 'var':
-                self.vm_writer.write_pop('pointer', 1)
-                self.vm_writer.write_pop('that', 0)
-            elif self.symbol_table.kind_of(varName) == 'field':
-                self.vm_writer.write_pop('pointer', 0)
-                self.vm_writer.write_pop('this', 0)
-            else:
-                raise SyntaxError
+            self.vm_writer.write_pop('that', 0)
         else:
             self.vm_writer.write_pop(self._var_seg(varName), self._var_index(varName))
 
@@ -557,6 +553,10 @@ class compilationEngine:
         elif text in ['-', '~']:
             self._add_parse_tree_xml(termElement)
             self._compileTerm(termElement)
+            if text == '-':
+                self.vm_writer.write_arithmetic('neg')
+            elif text == '~':
+                self.vm_writer.write_arithmetic('not')
             # '(' expression ')'
         elif tag == 'symbol':
             self._add_parse_tree_xml(termElement)
@@ -568,9 +568,9 @@ class compilationEngine:
             if next_text == '[':
                 varName = text
                 self._add_parse_tree_xml(termElement)
-                self.vm_writer.write_push(self._var_seg(varName), self._var_index(varName))
                 self._add_parse_tree_xml(termElement)
                 self._compileExpression(termElement)
+                self.vm_writer.write_push(self._var_seg(varName), self._var_index(varName))
                 self.vm_writer.write_arithmetic('+')
                 self._add_parse_tree_xml(termElement)
                 self.vm_writer.write_pop('pointer', 1)
@@ -589,11 +589,11 @@ class compilationEngine:
         string = string + ' '
 
         self.vm_writer.write_push('constant', len(string))
-        self.vm_writer.write_call('String.new')
+        self.vm_writer.write_call('String.new', 1)
 
         for char in string:
             self.vm_writer.write_push('constant', ord(char))
-            self.vm_writer.write_call('String.appendChar')
+            self.vm_writer.write_call('String.appendChar', 2)
 
     # expressionList tokens:
     # (expression (',' expression )* )?

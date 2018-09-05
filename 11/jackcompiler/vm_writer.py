@@ -18,9 +18,9 @@ class VMWriter():
             op = const.ARITHMETIC_OP_2_CMD[op]
             self._write_vm_file(op)
         elif op == '*':
-            self.write_call('Math.multiply')
+            self.write_call('Math.multiply', 2)
         elif op == '/':
-            self.write_call('Math.divide')
+            self.write_call('Math.divide', 2)
         else:
             self._write_vm_file(op)
 
@@ -28,9 +28,6 @@ class VMWriter():
         # arg = const.API_ARG[function_name]
         line = 'call' + ' ' + function_name + ' ' + str(arg_count)
         self._write_vm_file(line)
-
-        if function_name in const.VOID_SUBROUTINES:
-            self._write_vm_file('pop temp 0')
 
     def write_function(self, subroutine_name, local_var_count):
         line = 'function' + ' ' + self._stripped_file_name + '.' + subroutine_name + ' ' + str(local_var_count)
