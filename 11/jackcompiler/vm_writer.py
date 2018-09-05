@@ -13,9 +13,6 @@ class VMWriter():
 
         self._line_number = 1
 
-        self._label_count = 0
-        self._label_index = 0
-
     def write_arithmetic(self, op):
         if op in ['+', '-', '<', '>', '=', '&']:
             op = const.ARITHMETIC_OP_2_CMD[op]
@@ -37,49 +34,72 @@ class VMWriter():
 
     def write_function(self, subroutine_name, local_var_count):
         line = 'function' + ' ' + self._stripped_file_name + '.' + subroutine_name + ' ' + str(local_var_count)
-
         self._write_vm_file(line)
+        self._init_label()
+
+    def _init_label(self):
+        self._if_label_count = 0
+        self._while_label_count = 0
+        self._if_label_stack = []
+        self._while_label_stack = []
 
     def write_goto(self, label):
-        label_index = self._ref_index()
-        line = 'goto' + ' ' + label + str(label_index)
+        label_type = label.split('_')[0]
+        if label_type == 'WHILE':
+            label_index = self._while_label_stack[-1]
+        elif label_type == 'IF':
+            label_index = self._if_label_stack[-1]
+        else:
+            raise SyntaxError
 
+        line = 'goto' + ' ' + label + str(label_index)
         self._write_vm_file(line)
 
     def write_if(self, label):
-        if label == 'IF_TRUE':
-            label_index = self._add_index()
+        if label == 'WHILE_EXP':
+            label_index = self._while_label_stack[-1]
+        elif label == 'WHILE_END':
+            label_index = self._while_label_stack[-1]
+        elif label == 'IF_TRUE':
+            label_index = self._add_if_label_stack()
+        elif label == 'IF_FALSE':
+            label_index = self._if_label_stack[-1]
+        elif label == 'IF_END':
+            label_index = self._if_label_stack[-1]
         else:
-            label_index = self._ref_index()
+            raise SyntaxError
 
         line = 'if-goto' + ' ' + label + str(label_index)
         self._write_vm_file(line)
 
     def write_label(self, label):
         if label == 'WHILE_EXP':
-            label_index = self._add_index()
+            label_index = self._add_while_label_stack()
         elif label == 'WHILE_END':
-            label_index = self._ref_index()
-            self._dec_index()
+            label_index = self._while_label_stack.pop()
+        elif label == 'IF_TRUE':
+            label_index = self._if_label_stack[-1]
+        elif label == 'IF_FALSE':
+            label_index = self._if_label_stack[-1]
         elif label == 'IF_END':
-            label_index = self._ref_index()
-            self._dec_index()
+            label_index = self._if_label_stack.pop()
         else:
-            label_index = self._ref_index()
+            raise SyntaxError
 
         line = 'label' + ' ' + label + str(label_index)
         self._write_vm_file(line)
 
-    def _add_index(self):
-        self._label_count += 1
-        self._label_index = self._label_count
-        return self._label_index
+    def _add_while_label_stack(self):
+        index = self._while_label_count
+        self._while_label_count += 1
+        self._while_label_stack.append(index)
+        return index
 
-    def _dec_index(self):
-        self._label_index -= 1
-
-    def _ref_index(self):
-        return self._label_index
+    def _add_if_label_stack(self):
+        index = self._if_label_count
+        self._if_label_count += 1
+        self._if_label_stack.append(index)
+        return index
 
     def write_push(self, seg, index):
 
