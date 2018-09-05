@@ -65,23 +65,10 @@ class compilationEngine:
         sub.text = ' ' + text + ' '
         self._current_txml_line_number += 1
 
-    # def _tokens(self):
-    #
-    #     indent = ''
-    #     args_line = []
-    #
-    #     for i in range(0, len(inspect.stack())):
-    #         indent += ' '
-    #
-    #     for i in range(self._current_txml_line_number, len(self._root_txml_element)):
-    #         args_line.append(i)
-    #         args_line.append(self._root_txml_element[i].text.strip())
-
     # class tokens:
     # 'class' className '{' classVarDec* subroutineDec* '}'
     @debug
     def _compile_class(self):
-        # self._tokens()
 
         assert self._current_txml_elm().text.strip() == 'class'
         self._add_parse_tree_xml(self._class_xml_element)
@@ -281,7 +268,7 @@ class compilationEngine:
     # statement*
     @debug
     def _compileStatements(self, element):
-        # self._tokens()
+
         statementsElement = ET.SubElement(element, 'statements')
         while True:
             text = self._current_txml_elm().text.strip()
@@ -373,7 +360,7 @@ class compilationEngine:
     # 'let' varName ('[' expression ']')? '=' expression ';'
     @debug
     def _compileLet(self, element):
-        # self._tokens()
+
         letElement = ET.SubElement(element, 'letStatement')
 
         let_statement_with_array = False
