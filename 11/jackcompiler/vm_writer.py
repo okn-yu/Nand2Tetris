@@ -14,7 +14,7 @@ class VMWriter():
         self._line_number = 1
 
     def write_arithmetic(self, op):
-        if op in ['+', '-', '<', '>', '=', '&']:
+        if op in ['+', '-', '<', '>', '=', '&', '|']:
             op = const.ARITHMETIC_OP_2_CMD[op]
             self._write_vm_file(op)
         elif op == '*':

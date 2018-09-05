@@ -616,6 +616,8 @@ class compilationEngine:
             return 'argument'
         elif kind == 'field':
             return  'this'
+        elif kind == 'static':
+            return 'static'
         else:
             raise SyntaxError
 
