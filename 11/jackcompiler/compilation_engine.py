@@ -345,6 +345,10 @@ class compilationEngine:
         else:
             raise SyntaxError
 
+        # When call method defined "in File", object should be "1st" argument!
+        if self._subroutine_call_kind == 'method':
+            self.vm_writer.write_push('pointer', 0)
+
         # '(' expressionList ')' ';'
         assert self._current_txml_elm().text.strip() == '('
         self._add_parse_tree_xml(element)
@@ -353,10 +357,6 @@ class compilationEngine:
 
         assert self._current_txml_elm().text.strip() == ')'
         self._add_parse_tree_xml(element)
-
-        # When call method defined "in File", object should be exist in stack!
-        if self._subroutine_call_kind == 'method':
-            self.vm_writer.write_push('pointer', 0)
 
         self.vm_writer.write_call(self._subroutine_call_name, self._expression_count)
 
