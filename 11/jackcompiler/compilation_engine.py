@@ -165,6 +165,10 @@ class compilationEngine:
     def _compileParameterList(self, element):
         paramListElement = ET.SubElement(element, 'parameterList')
 
+        # in method, 1st arg 'self' is added implicitly.
+        if self._subroutine_kind == 'method':
+            self.symbol_table.define('self', 'arg', self._className)
+
         while True:
             # type varName
             if self._current_txml_elm().tag in ['keyword', 'identifier']:
