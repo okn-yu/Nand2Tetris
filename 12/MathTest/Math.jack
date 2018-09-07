@@ -10,7 +10,30 @@
 class Math {
 
     /** Initializes the library. */
+
+    static Array bitArray;
+
     function void init() {
+
+        let bitArray = Array.new(16)
+        let bitArray[0] = 1;
+        let bitArray[1] = 2;
+        let bitArray[2] = 4;
+        let bitArray[3] = 8;
+        let bitArray[4] = 16;
+        let bitArray[5] = 32;
+        let bitArray[6] = 64;
+        let bitArray[6] = 128;
+        let bitArray[7] = 256;
+        let bitArray[8] = 512;
+        let bitArray[9] = 1024;
+        let bitArray[10] = 2048;
+        let bitArray[11] = 4096;
+        let bitArray[12] = 8192;
+        let bitArray[13] = 16384;
+        let bitArray[14] = 32768;
+        let bitArray[15] = 65535;
+        let bitArray[16] = 131072;
         return;
     }
 
@@ -25,6 +48,13 @@ class Math {
         }
     }
 
+    /** Returns jth bit of i. */
+    function int bit(int i, int j) {
+
+        return bitArray[j]
+
+    }
+
     /** Returns the product of x and y. 
      *  When a Jack compiler detects the multiplication operator '*' in the 
      *  program's code, it handles it by invoking this method. In other words,
@@ -32,21 +62,23 @@ class Math {
      */
     function int multiply(int x, int y) {
 
-        var int sum, shiftedX, n_bit,y_bit;
+        var int sum, shiftedX, n_bit, y_bit;
 
         let sum = 0;
         let shiftedX = x;
         let n_bit = 1;
+        let y_bit = 0;
 
-        while(n_bit < y){
+        while(n_bit < y | n_bit = y){
 
             let y_bit = y & n_bit;
-            let n_bit = n_bit + n_bit;
 
             if( y_bit = 1 ){
                 let sum = sum + shiftedX;
-                let shiftedX = shiftedX + shiftedX;
             }
+
+            let shiftedX = shiftedX + shiftedX;
+            let n_bit = n_bit + n_bit;
         }
         return sum;
     }
