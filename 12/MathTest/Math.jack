@@ -11,10 +11,18 @@ class Math {
 
     /** Initializes the library. */
     function void init() {
+        return;
     }
 
     /** Returns the absolute value of x. */
     function int abs(int x) {
+
+        if(x < 0) {
+            return x;
+        }
+        else{
+            return -x;
+        }
     }
 
     /** Returns the product of x and y. 
@@ -23,6 +31,24 @@ class Math {
      *  the Jack expressions x*y and multiply(x,y) return the same value.
      */
     function int multiply(int x, int y) {
+
+        var int sum, shiftedX, n_bit,y_bit;
+
+        let sum = 0;
+        let shiftedX = x;
+        let n_bit = 1;
+
+        while(n_bit < y){
+
+            let y_bit = y & n_bit;
+            let n_bit = n_bit + n_bit;
+
+            if( y_bit = 1 ){
+                let sum = sum + shiftedX;
+                let shiftedX = shiftedX + shiftedX;
+            }
+        }
+        return sum;
     }
 
     /** Returns the integer part of x/y.
@@ -31,17 +57,52 @@ class Math {
      *  the Jack expressions x/y and divide(x,y) return the same value.
      */
     function int divide(int x, int y) {
+
+        var int shifted_y, count;
+
+        let shifted_y = 1;
+        let count = 1;
+
+        if(x < y){
+            return 0;
+        }
+
+        while(shifted_y < x){
+            let count = count + Math.multiply(count, 2);
+            let shifted_y = Math.multiply(shifted_y, 2);
+        }
+        return count;
     }
 
     /** Returns the integer part of the square root of x. */
     function int sqrt(int x) {
+
+        var int n;
+        let n = Math.divide(x, 2);
+
+        while( Math.multiply(n, n) >  x){
+            let n = n - 1;
+        }
+        return n;
     }
 
     /** Returns the greater number. */
     function int max(int a, int b) {
+        if(a < b) {
+            return b;
+        }
+        else{
+            return a;
+        }
     }
 
     /** Returns the smaller number. */
     function int min(int a, int b) {
+        if(a > b) {
+            return b;
+        }
+        else{
+            return a;
+        }
     }
 }
