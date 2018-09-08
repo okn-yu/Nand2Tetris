@@ -12,10 +12,11 @@ class Math {
     /** Initializes the library. */
 
     static Array bitArray;
+    static int bitMaxLen;
 
     function void init() {
 
-        let bitArray = Array.new(16)
+        let bitArray = Array.new(16);
         let bitArray[0] = 1;
         let bitArray[1] = 2;
         let bitArray[2] = 4;
@@ -23,23 +24,24 @@ class Math {
         let bitArray[4] = 16;
         let bitArray[5] = 32;
         let bitArray[6] = 64;
-        let bitArray[6] = 128;
-        let bitArray[7] = 256;
-        let bitArray[8] = 512;
-        let bitArray[9] = 1024;
-        let bitArray[10] = 2048;
-        let bitArray[11] = 4096;
-        let bitArray[12] = 8192;
-        let bitArray[13] = 16384;
-        let bitArray[14] = 32768;
-        let bitArray[15] = 65535;
-        let bitArray[16] = 131072;
+        let bitArray[7] = 128;
+        let bitArray[8] = 256;
+        let bitArray[9] = 512;
+        let bitArray[10] = 1024;
+        let bitArray[11] = 2048;
+        let bitArray[12] = 4096;
+        let bitArray[13] = 8192;
+        let bitArray[14] = 16384;
+        /* 32768 is too big. failed to compile! */
+        let bitArray[15] = bitArray[14] + bitArray[14];
+
+        let bitMaxLen = 16;
+
         return;
     }
 
     /** Returns the absolute value of x. */
     function int abs(int x) {
-
         if(x < 0) {
             return x;
         }
@@ -48,11 +50,16 @@ class Math {
         }
     }
 
-    /** Returns jth bit of i. */
+    /** check if j-th bit of integer i. */
     function int bit(int i, int j) {
+        var int flag;
+        let flag = 0;
 
-        return bitArray[j]
-
+        if((bitArray[j-1] & i) = bitArray[j-1]){
+            return true;
+        }else{
+            return false;
+        }
     }
 
     /** Returns the product of x and y. 
@@ -65,22 +72,20 @@ class Math {
         var int sum, shiftedX, n_bit, y_bit;
 
         let sum = 0;
-        let shiftedX = x;
         let n_bit = 1;
-        let y_bit = 0;
+        let shiftedX = x;
 
-        while(n_bit < y | n_bit = y){
+        while(n_bit < (bitMaxLen + 1)){
 
-            let y_bit = y & n_bit;
-
-            if( y_bit = 1 ){
+            if(Math.bit(y, n_bit)){
                 let sum = sum + shiftedX;
             }
 
             let shiftedX = shiftedX + shiftedX;
-            let n_bit = n_bit + n_bit;
+            let n_bit = n_bit + 1;
         }
         return sum;
+
     }
 
     /** Returns the integer part of x/y.
@@ -90,20 +95,53 @@ class Math {
      */
     function int divide(int x, int y) {
 
-        var int shifted_y, count;
-
-        let shifted_y = 1;
-        let count = 1;
+        var int count, shifted_y;
+        var boolean loop;
+        let shifted_y = y;
+        let count = 0;
+        let loop = true;
 
         if(x < y){
-            return 0;
+            return count;
         }
 
-        while(shifted_y < x){
-            let count = count + Math.multiply(count, 2);
-            let shifted_y = Math.multiply(shifted_y, 2);
+        let count = 1;
+
+        while(loop){
+            if(x < Math.multiply(shifted_y, 2)){
+                let loop = false;
+            }else{
+                if(x = shifted_y){
+                    let loop = false;
+                }else{
+                    let loop = true;
+                    let shifted_y = Math.multiply(shifted_y, 2);
+                    let count = Math.multiply(count, 2);
+                }
+            }
         }
-        return count;
+
+        //return count;
+
+        let x = x - shifted_y;
+        let loop = true;
+
+        while(loop){
+            if(y < x){
+                let count = count + 1;
+                let x= x - y;
+            }else{
+                if(y = x){
+                    let count = count + 1;
+                    let loop = false;
+                }else{
+                    let loop = false;
+                }
+            }
+        }
+
+         return count;
+
     }
 
     /** Returns the integer part of the square root of x. */
