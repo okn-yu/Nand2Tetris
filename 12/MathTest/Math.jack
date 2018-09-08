@@ -98,50 +98,42 @@ class Math {
         var int count, shifted_y;
         var boolean loop;
         let shifted_y = y;
-        let count = 0;
+        let count = 1;
         let loop = true;
 
         if(x < y){
-            return count;
+            return 0;
         }
 
-        let count = 1;
-
         while(loop){
-            if(x < Math.multiply(shifted_y, 2)){
+            if(x < Math.multiply(shifted_y, 2) | (x = shifted_y)){
                 let loop = false;
+                let x = x - shifted_y;
             }else{
-                if(x = shifted_y){
-                    let loop = false;
-                }else{
-                    let loop = true;
-                    let shifted_y = Math.multiply(shifted_y, 2);
-                    let count = Math.multiply(count, 2);
-                }
+                let loop = true;
+                let shifted_y = Math.multiply(shifted_y, 2);
+                let count = Math.multiply(count, 2);
             }
         }
 
-        //return count;
+        return count;
 
-        let x = x - shifted_y;
-        let loop = true;
-
-        while(loop){
+        /**
+        while(~loop){
             if(y < x){
                 let count = count + 1;
                 let x= x - y;
             }else{
                 if(y = x){
                     let count = count + 1;
-                    let loop = false;
+                    let loop = true;
                 }else{
-                    let loop = false;
+                    let loop = true;
                 }
             }
         }
-
          return count;
-
+        **/
     }
 
     /** Returns the integer part of the square root of x. */
