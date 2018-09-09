@@ -125,17 +125,8 @@ pop that 0
 push constant 15
 push static 0
 add
-push constant 14
-push static 0
-add
-pop pointer 1
-push that 0
-push constant 14
-push static 0
-add
-pop pointer 1
-push that 0
-add
+push constant 32767
+not
 pop temp 0
 pop pointer 1
 push temp 0
