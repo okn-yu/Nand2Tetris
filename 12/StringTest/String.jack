@@ -12,18 +12,22 @@
  */
 class String {
 
+    field Array stringArray;
     field int stringLength;
     field int currentIndex;
-    field Array stringArray;
 
     /** constructs a new empty string with a maximum length of maxLength
      *  and initial length of 0. */
     constructor String new(int maxLength) {
-        let stringArray = Array.new(maxLength);
-        let stringLength = maxLength;
-        let currentIndex = 0;
 
-        return this;
+        if(maxLength < 1){
+            return this;
+        }else{
+            let stringLength = maxLength;
+            let currentIndex = 0;
+            let stringArray = Memory.alloc(maxLength);
+            return this;
+        }
     }
 
     /** Disposes this string. */
@@ -39,12 +43,12 @@ class String {
 
     /** Returns the character at the j-th location of this string. */
     method char charAt(int j) {
-        return stringArray[j];
+        return stringArray[j+1];
     }
 
     /** Sets the character at the j-th location of this string to c. */
     method void setCharAt(int j, char c) {
-        let stringArray[j] = c;
+        let stringArray[j+1] = c;
 
         return;
     }
@@ -54,7 +58,7 @@ class String {
         let currentIndex = currentIndex + 1;
         let stringArray[currentIndex] = c;
 
-        return stringArray;
+        return this;
     }
 
     /** Erases the last character from this string. */
