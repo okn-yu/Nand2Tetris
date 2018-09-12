@@ -14,7 +14,6 @@ class String {
 
     field Array stringArray;
     field int stringLength;
-    field int currentIndex;
 
     /** constructs a new empty string with a maximum length of maxLength
      *  and initial length of 0. */
@@ -23,8 +22,7 @@ class String {
         if(maxLength < 1){
             return this;
         }else{
-            let stringLength = maxLength;
-            let currentIndex = 0;
+            let stringLength = 0;
             let stringArray = Memory.alloc(maxLength);
             return this;
         }
@@ -38,7 +36,7 @@ class String {
 
     /** Returns the current length of this string. */
     method int length() {
-        return currentIndex;
+        return stringLength;
     }
 
     /** Returns the character at the j-th location of this string. */
@@ -49,22 +47,19 @@ class String {
     /** Sets the character at the j-th location of this string to c. */
     method void setCharAt(int j, char c) {
         let stringArray[j+1] = c;
-
         return;
     }
 
     /** Appends c to this string's end and returns this string. */
     method String appendChar(char c) {
-        let currentIndex = currentIndex + 1;
-        let stringArray[currentIndex] = c;
-
+        let stringArray[stringLength] = c;
+        let stringLength = stringLength + 1;
         return this;
     }
 
     /** Erases the last character from this string. */
     method void eraseLastChar() {
         let stringLength = stringLength - 1;
-
         return;
     }
 
@@ -76,7 +71,7 @@ class String {
         let num = 0;
 
         while(index < stringLength){
-            let num = (num * 10) + (stringArray[index] + 48);
+            let num = (num * 10) + (stringArray[index] - 48);
             let index = index + 1;
         }
         return num;
@@ -84,8 +79,38 @@ class String {
 
     /** Sets this string to hold a representation of the given value. */
     method void setInt(int val) {
-        do appendChar(val + 48);
+
+        var int num, index;
+        let index = 0;
+        let num = 0;
+
+        //while(index < stringLength){
+        //    let num = (num * 10) + (stringArray[index] - 48);
+        //    let index = index + 1;
+        //}
+
         return;
+
+        /**
+        var int divideNum, remainder, numChar;
+        let divideNum = 10;
+        let remainder = 0;
+        let numChar = 0;
+
+        if(val < 11){
+            do appendChar(val+48);
+            return;
+        }
+
+        while(divideNum < val){
+            let remainder = val / divideNum;
+            let divideNum = divideNum * 10;
+            let numChar = remainder + 48;
+            do appendChar(numChar);
+        }
+
+        return;
+        **/
     }
 
     /** Returns the new line character. */
