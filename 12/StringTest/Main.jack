@@ -75,8 +75,8 @@ class Main {
         do Output.printInt(String.newLine());    // newLine: 128
         do Output.println();
         
-        //do i.dispose();
-        //do s.dispose();
+        do i.dispose();
+        do s.dispose();
 
         return;
     }
