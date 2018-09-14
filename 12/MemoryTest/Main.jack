@@ -19,15 +19,14 @@ class Main {
         let a[2] = 222;
         do Memory.poke(8002, a[2]);      // RAM[8002] = 222
 
-        /**
         let b = Array.new(3);
         let b[1] = a[2] - 100;
         do Memory.poke(8003, b[1]);       // RAM[8003] = 122
-        
+
         let c = Array.new(500);
         let c[499] = a[2] - b[1];
         do Memory.poke(8004, c[499]);     // RAM[8004] = 100
-        
+
         do a.dispose();                   // uses Memory.deAlloc
         do b.dispose();
         
@@ -37,7 +36,7 @@ class Main {
         
         do c.dispose();
         do b.dispose();
-        **/
+
         return;
     }
 }
