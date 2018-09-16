@@ -12,10 +12,12 @@
 class Screen {
 
     static Array screenMap;
+    static boolean color;
 
     /** Initializes the Screen. */
     function void init() {
         let screenMap = 16384;
+        let color = true;
         return;
     }
 
@@ -27,6 +29,8 @@ class Screen {
     /** Sets the current color, to be used for all subsequent drawXXX commands.
      *  Black is represented by true, white by false. */
     function void setColor(boolean b) {
+        let color = b;
+
         return;
     }
 
@@ -37,48 +41,68 @@ class Screen {
         let addr = (x * 32) + (y / 16);
         let bit = Math.remainder(y, 16); // from 0 to 15.
         let screenMap[addr] = screenMap[addr] & ((-1) - Math.pow(2, bit));
-        let screenMap[addr] = screenMap[addr] + Math.pow(2, bit);
+        //let screenMap[addr] = screenMap[addr] + Math.pow(2, bit);
+
+        if(color){
+            let screenMap[addr] = screenMap[addr] + Math.pow(2, bit);
+        }
 
         return;
     }
 
     /** Draws a line from pixel (x1,y1) to pixel (x2,y2), using the current color. */
     function void drawLine(int x1, int y1, int x2, int y2) {
-        var int x, y, dx, dy, dx0, dy0;
+        var int x, y, addX, addY, dx0, dy0, dx, dy;
 
         let x = x1;
         let y = y1;
         let dx0 = x2 - x1;
         let dy0 = y2 - y1;
+        let dx = 1;
+        let dy = 1;
 
         if(dx0 < 0){
-            let dx = -1;
+            let addX = -1;
         }
         if(dx0 = 0){
-            let dx = 0;
+            let addX = 0;
         }
         if(0 < dx0){
-            let dx = 1;
+            let addX = 1;
         }
         if(dy0 < 0){
-            let dy = -1;
+            let addY = -1;
         }
         if(dy0 = 0){
-            let dy = 0;
+            let addY = 0;
         }
         if(0 < dy0){
-            let dy = 1;
+            let addY = 1;
         }
 
-        while(~((Math.abs(x - x2) = 0) & (Math.abs(y - y2) = 0))){
+        if(dx0 * dy0 = 0){
+            while(~((Math.abs(x - x2) = 0) & (Math.abs(y - y2) = 0))){
 
-            if(Math.abs(y - y2) < Math.abs(x - x2)){
-                let x = x + dx;
-            }else{
-                let y = y + dy;
+                if(dx0 = 0){
+                    let y = y + addY;
+                }
+                if(dy0 = 0){
+                    let x = x + addX;
+                }
+             do Screen.drawPixel(y, x);
             }
+        }else{
+            while(~((Math.abs(x - x2) = 0) & (Math.abs(y - y2) = 0))){
 
-            do Screen.drawPixel(y, x);
+                if(Math.abs(dy * dx0) < Math.abs(dy0 * dx)){
+                    let y = y + addY;
+                    let dy = y - y1;
+                }else{
+                    let x = x + addX;
+                    let dx = x - x1;
+                }
+                do Screen.drawPixel(y, x);
+            }
         }
         return;
     }
@@ -87,11 +111,13 @@ class Screen {
      * and bottom right corner is (x2,y2), using the current color. */
     function void drawRectangle(int x1, int y1, int x2, int y2) {
 
-        do Screen.drawLine(x1, y1, x1, y2);
-        do Screen.drawLine(x1, y1, x2, y1);
-        do Screen.drawLine(x2, y1, x2, y2);
-        do Screen.drawLine(x1, y2, x2, y2);
+        var int y;
+        let y = y1;
 
+        while(y < y2){
+            do Screen.drawLine(x1, y, x2, y);
+            let y = y + 1;
+        }
         return;
     }
 

@@ -2,11 +2,16 @@ function Screen.init 0
 push constant 16384
 pop static 0
 push constant 0
+not
+pop static 1
+push constant 0
 return
 function Screen.clearScreen 0
 push constant 0
 return
 function Screen.setColor 0
+push argument 0
+pop static 1
 push constant 0
 return
 function Screen.drawPixel 2
@@ -41,6 +46,10 @@ pop temp 0
 pop pointer 1
 push temp 0
 pop that 0
+push static 1
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
 push local 0
 push static 0
 add
@@ -57,9 +66,10 @@ pop temp 0
 pop pointer 1
 push temp 0
 pop that 0
+label IF_FALSE0
 push constant 0
 return
-function Screen.drawLine 6
+function Screen.drawLine 8
 push argument 0
 pop local 0
 push argument 1
@@ -72,6 +82,10 @@ push argument 3
 push argument 1
 sub
 pop local 5
+push constant 1
+pop local 6
+push constant 1
+pop local 7
 push local 4
 push constant 0
 lt
@@ -128,6 +142,14 @@ label IF_TRUE5
 push constant 1
 pop local 3
 label IF_FALSE5
+push local 4
+push local 5
+call Math.multiply 2
+push constant 0
+eq
+if-goto IF_TRUE6
+goto IF_FALSE6
+label IF_TRUE6
 label WHILE_EXP0
 push local 0
 push argument 2
@@ -145,62 +167,114 @@ and
 not
 not
 if-goto WHILE_END0
-push local 1
-push argument 3
-sub
-call Math.abs 1
-push local 0
-push argument 2
-sub
-call Math.abs 1
-lt
-if-goto IF_TRUE6
-goto IF_FALSE6
-label IF_TRUE6
-push local 0
-push local 2
-add
-pop local 0
-goto IF_END6
-label IF_FALSE6
+push local 4
+push constant 0
+eq
+if-goto IF_TRUE7
+goto IF_FALSE7
+label IF_TRUE7
 push local 1
 push local 3
 add
 pop local 1
-label IF_END6
+label IF_FALSE7
+push local 5
+push constant 0
+eq
+if-goto IF_TRUE8
+goto IF_FALSE8
+label IF_TRUE8
+push local 0
+push local 2
+add
+pop local 0
+label IF_FALSE8
 push local 1
 push local 0
 call Screen.drawPixel 2
 pop temp 0
 goto WHILE_EXP0
 label WHILE_END0
+goto IF_END6
+label IF_FALSE6
+label WHILE_EXP1
+push local 0
+push argument 2
+sub
+call Math.abs 1
+push constant 0
+eq
+push local 1
+push argument 3
+sub
+call Math.abs 1
+push constant 0
+eq
+and
+not
+not
+if-goto WHILE_END1
+push local 7
+push local 4
+call Math.multiply 2
+call Math.abs 1
+push local 5
+push local 6
+call Math.multiply 2
+call Math.abs 1
+lt
+if-goto IF_TRUE9
+goto IF_FALSE9
+label IF_TRUE9
+push local 1
+push local 3
+add
+pop local 1
+push local 1
+push argument 1
+sub
+pop local 7
+goto IF_END9
+label IF_FALSE9
+push local 0
+push local 2
+add
+pop local 0
+push local 0
+push argument 0
+sub
+pop local 6
+label IF_END9
+push local 1
+push local 0
+call Screen.drawPixel 2
+pop temp 0
+goto WHILE_EXP1
+label WHILE_END1
+label IF_END6
 push constant 0
 return
-function Screen.drawRectangle 0
-push argument 0
+function Screen.drawRectangle 1
 push argument 1
-push argument 0
+pop local 0
+label WHILE_EXP0
+push local 0
 push argument 3
+lt
+not
+if-goto WHILE_END0
+push argument 0
+push local 0
+push argument 2
+push local 0
 call Screen.drawLine 4
 pop temp 0
-push argument 0
-push argument 1
-push argument 2
-push argument 1
-call Screen.drawLine 4
-pop temp 0
-push argument 2
-push argument 1
-push argument 2
-push argument 3
-call Screen.drawLine 4
-pop temp 0
-push argument 0
-push argument 3
-push argument 2
-push argument 3
-call Screen.drawLine 4
-pop temp 0
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP0
+label WHILE_END0
 push constant 0
 return
 function Screen.drawCircle 2
