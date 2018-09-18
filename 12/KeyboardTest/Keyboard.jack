@@ -8,8 +8,13 @@
  */
 class Keyboard {
 
+    static int memoryMap;
+    static int keyboard;
+
     /** Initializes the keyboard. */
     function void init() {
+        let keyboard = 24576;
+        return;
     } 
 
     /**
@@ -33,6 +38,14 @@ class Keyboard {
      * F1 - F12 = 141 - 152
      */
     function char keyPressed() {
+        var cahr c;
+        let c = memoryMap[keyboard];
+
+        if(152 < c){
+            let c = 0;
+        }
+
+        return c;
     }
 
     /**								
@@ -41,6 +54,21 @@ class Keyboard {
      * of the pressed key.
      */
     function char readChar() {
+         var char pressedChar, releasedChar;
+         var int releasedChar;
+
+         while((pressedChar = 0)){
+             let pressedChar = Keyboard.keyPressed();
+         }
+
+         let releasedChar = 1;
+         while(~(releasedChar = 0)){
+             let releasedChar = Keyboard.keyPressed();
+         }
+
+         do Output.printChar(pressedChar);
+
+        return pressedChar;
     }
 
     /**								
@@ -49,7 +77,30 @@ class Keyboard {
      * and returns its value. Also handles user backspaces.
      */
     function String readLine(String message) {
-    }   
+        var boolean loop;
+        var char c;
+        var String str;
+
+        let str = String.new(10);
+        let loop = true;
+
+        do Output.printString(message);
+
+        while(loop){
+            let c = Keyboard.readChar();
+
+            if(c = 128){
+                let loop = false;
+            }else{
+                if(c = 129){
+                    do str.eraseLastChar();
+                }else{
+                    let str = str.appendChar(c);
+                }
+            }
+        }
+        return str;
+    }
 
     /**								
      * Displays the message on the screen, reads from the keyboard the entered
@@ -58,5 +109,29 @@ class Keyboard {
      * entered text is detected). Also handles user backspaces. 
      */
     function int readInt(String message) {
+        var boolean loop;
+        var char c;
+        var String str;
+
+        let str = String.new(10);
+        let loop = true;
+
+        do Output.printString(message);
+
+        while(loop){
+            let c = Keyboard.readChar();
+
+            if(c = 128){
+                let loop = false;
+            }else{
+                if(c = 129){
+                    do str.eraseLastChar();
+                }else{
+                    let str = str.appendChar(c);
+                }
+            }
+        }
+
+        return str.intValue();
     }
 }

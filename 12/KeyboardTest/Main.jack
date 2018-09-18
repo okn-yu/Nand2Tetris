@@ -12,7 +12,8 @@ class Main {
     	var String s;
     	var int i;
     	var boolean ok;
-    
+
+        /**
         let ok = false;
         do Output.printString("keyPressed test:");
         do Output.println();
@@ -34,7 +35,7 @@ class Main {
 	            let ok = true;
 	        }
 	    }
-	
+
 	    let ok = false;
         do Output.printString("readChar test:");
         do Output.println();
@@ -52,7 +53,8 @@ class Main {
 	            let ok = true;
 	        }
 	    }
-	
+	    **/
+
     	let ok = false;
         do Output.printString("readLine test:");
         do Output.println();
@@ -60,6 +62,8 @@ class Main {
         do Output.println();
         while (~ok) {
     	    let s = Keyboard.readLine("Please type 'JACK' and press enter: ");
+    	    do Output.printString(s);
+    	    do Output.println();
 
 	        if (s.length() = 4) {
 	            if ((s.charAt(0) = 74) & (s.charAt(1) = 65) & (s.charAt(2) = 67) & (s.charAt(3) = 75)) {
@@ -87,7 +91,7 @@ class Main {
         
         do Output.println();
         do Output.printString("Test completed successfully");
-        
+
         return;
     }
 }
