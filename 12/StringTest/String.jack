@@ -95,21 +95,23 @@ class String {
 
     /** Sets this string to hold a representation of the given value. */
     method void setInt(int val) {
-        var int divideNum, quotient, remainder, c;
-        var boolean neg;
+        var int divideNum, quotient, remainder, c, index, tmp;
+        let stringLength = 0;
 
-        while(true){
-            if(val < 10){
-                do appendChar(val + 48);
-                return;
-            }else{
-                let quotient = val / 10;
-                let remainder = val - (quotient * 10);
-                let c = remainder + 48;
-                do appendChar(c);
-                do setInt(quotient);
+        if(Math.abs(val) < 10){
+            if(val < 0){
+                do appendChar(45);
             }
+            do appendChar(Math.abs(val) + 48);
+        }else{
+            let quotient = val / 10;
+            let remainder = val - (quotient * 10);
+            let c = Math.abs(remainder) + 48;
+            do setInt(quotient);
+            do appendChar(Math.abs(c));
         }
+
+        return;
     }
 
     /** Returns the new line character. */

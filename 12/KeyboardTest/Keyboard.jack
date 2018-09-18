@@ -8,11 +8,12 @@
  */
 class Keyboard {
 
-    static int memoryMap;
+    static Array memory;
     static int keyboard;
 
     /** Initializes the keyboard. */
     function void init() {
+        let memory = 0;
         let keyboard = 24576;
         return;
     } 
@@ -39,7 +40,7 @@ class Keyboard {
      */
     function char keyPressed() {
         var cahr c;
-        let c = memoryMap[keyboard];
+        let c = memory[keyboard];
 
         if(152 < c){
             let c = 0;
