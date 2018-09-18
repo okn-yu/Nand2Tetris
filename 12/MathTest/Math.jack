@@ -92,12 +92,9 @@ class Math {
      */
     function int divide(int x, int y) {
 
-        var int count, shifted_y;
-        var boolean loop, is_x_neg, is_y_neg, neg;
+        var int q, result;
+        var boolean is_x_neg, is_y_neg;
 
-        let shifted_y = y;
-        let count = 1;
-        let loop = true;
         let is_x_neg = false;
         let is_y_neg = false;
 
@@ -108,12 +105,6 @@ class Math {
             let is_y_neg = true;
         }
 
-        if(is_x_neg = is_y_neg){
-            let neg = false;
-        }else{
-            let neg = true;
-        }
-
         let x = Math.abs(x);
         let y = Math.abs(y);
 
@@ -121,35 +112,19 @@ class Math {
             return 0;
         }
 
-        while(loop){
-            if((0 < (Math.multiply(shifted_y, 2) - x)) | (x = shifted_y)) {
-                let loop = false;
-                let x = x - shifted_y;
-            }else{
-                let loop = true;
-                let shifted_y = Math.multiply(shifted_y, 2);
-                let count = Math.multiply(count, 2);
-            }
+        let q = Math.divide(x, y + y);
+
+        if( x - (2 * q * y) < y ) {
+            let result = q + q;
+        }
+        else {
+            let result = q + q + 1;
         }
 
-        while(~loop){
-            if(y < x){
-                let count = count + 1;
-                let x= x - y;
-            }else{
-                if(y = x){
-                    let count = count + 1;
-                    let loop = true;
-                }else{
-                    let loop = true;
-                }
-            }
-        }
-
-        if(neg){
-            return -count;
+        if(is_x_neg = is_y_neg){
+            return result;
         }else{
-            return count;
+            return -result;
         }
     }
 
