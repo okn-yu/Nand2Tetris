@@ -7,7 +7,7 @@ not a = not (a and a)
   
 **■ANDゲートの導出**  
 a and b =  not (not (a and b))  
-        = (not (a and b))) nand (not (a and b)))  
+        = (not (a nand b))  
         = (a nand b) nand (a nand b)  
   
 **■ORゲートの導出**  
@@ -42,14 +42,15 @@ NOTゲート：1本
 ANDゲート：3本  
 ORゲート：3本  
 XORゲート：11本  
+マルチプレクサゲート：10本  
+デマルチプレクサゲート：7本
   
 **■Project01で作成したゲート一覧**  
 ・Notゲート  
 ・Andゲート  
 ・Orゲート  
 ・Xorゲート  
-・多ビットNot/And/Or/Xorゲート  
 ・マルチプレクサゲート  
-・多ビットマルチプレクサゲート  
 ・デマルチプレクサゲート  
-・多ビットデマルチプレクサゲート    
+・多ビットゲート（各ゲートの並列化）
+・多入力ゲート（各ゲートの多段化）  
