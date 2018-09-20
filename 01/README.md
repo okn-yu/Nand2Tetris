@@ -22,6 +22,7 @@ a xor b = ((not a) and b) or (a and (not b))
 out = (a and (not b) and (not sel)) or (a and b and (not sel)) or ((not a) and b and sel) or (a and b and sel)  
   
 前2つの項  
+= (a and (not b) and (not sel)) or (a and b and (not sel))  
 = a and ((not b) or b) and (not sel)  
 = a and (not sel)  
   
