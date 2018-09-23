@@ -20,13 +20,13 @@ CHIP PC {
 
     // Process Inc
     Inc16(in=feedback, out=inc-feedback);
-    Mux16(a=feedback, b=inc-feedback, sel=inc, out=inc-in);
+    Mux16(a=feedback, b=inc-feedback, sel=inc, out=inc-out);
 
     // Process Load
-    Mux16(a=inc-in, b=in, sel=load, out=load-in);
+    Mux16(a=inc-out, b=in, sel=load, out=load-out);
 
-    //  Process Reset
-    Mux16(a=load-in, b[0..15]=false, sel=reset, out=reset-out);
+    // Process Reset
+    Mux16(a=load-out, b[0..15]=false, sel=reset, out=reset-out);
 
     Register(in=reset-out, load=true, out=out, out=feedback);
 }
