@@ -4,6 +4,7 @@ class Parser:
         self._currentCommand = ''
         self._currentType = ''
         self.parsedAsmLines = []
+        self._lineNum = 0
 
         with open(fileName, mode='r') as file:
             linesList = file.readlines()
@@ -31,7 +32,8 @@ class Parser:
                 'symbol': self._symbol(),
                 'dest': self._dest(),
                 'comp': self._comp(),
-                'jump': self._jump()
+                'jump': self._jump(),
+                'lineNum': self._lineNumber()
             }
         )
 
@@ -78,3 +80,8 @@ class Parser:
             return self._currentCommand.split(';')[1]
         else:
             return None
+
+    def _lineNumber(self):
+        if self._commandType() != 'L_COMMAND':
+            self._lineNum += 1
+        return self._lineNum
