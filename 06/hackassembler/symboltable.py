@@ -1,5 +1,7 @@
 class SymbolTable:
     def __init__(self, parsedAsmLines):
+
+        print(parsedAsmLines)
         self.symbolDict = {
             'SP': 0,
             'LCL': 1,
@@ -24,43 +26,31 @@ class SymbolTable:
             'R15': 15,
             'SCREEN': 16384,
             'KBD': 24576}
-        self.symbolList = []
         self.lineNumber = 0
-        self._parse(parsedAsmLines)
-        self._createSymbolTable()
+        self._variableAddress = 16
 
-    def _parse(self, parsedAsmLines):
-        for parsedAsmDict in parsedAsmLines:
+        self._parseLCommand([line for line in parsedAsmLines if line.get('commandType') == 'L_COMMAND'])
+        self._parseACommand([line for line in parsedAsmLines if line.get('commandType') == 'A_COMMAND'])
+
+    def _parseLCommand(self, lCommands):
+
+        for parsedAsmDict in lCommands:
             symbol = parsedAsmDict.get('symbol')
-            commandType = parsedAsmDict.get('commandType')
-            self._preSymbolTable(symbol, commandType)
-            self._updateLineNumber(commandType)
+            lineNum = parsedAsmDict.get('lineNum')
+            self.symbolDict[symbol] = lineNum
+
+    def _parseACommand(self, aCommands):
+
+        for parsedAsmDict in aCommands:
+            symbol = parsedAsmDict.get('symbol')
+
+            if symbol.isdigit():
+                continue
+            elif symbol in self.symbolDict:
+                continue
+            else:
+                self._addEntry(symbol, self._variableAddress)
+                self._variableAddress += 1
 
     def _addEntry(self, symbol, address):
         self.symbolDict[symbol] = address
-
-    def _preSymbolTable(self, symbol, commandType):
-        if not symbol or (symbol in self.symbolDict) or symbol.isdigit():
-            return
-
-        if commandType == 'L_COMMAND':
-            self.symbolDict[symbol] = self.lineNumber
-
-            if symbol in self.symbolList:
-                self.symbolList.remove(symbol)
-                
-            return
-
-        if commandType == 'A_COMMAND' and (symbol not in self.symbolList):
-            self.symbolList.append(symbol)
-
-    def _updateLineNumber(self, commandType):
-        if not commandType == 'L_COMMAND':
-            self.lineNumber += 1
-
-    def _createSymbolTable(self):
-        variableAddress = 16
-
-        for symbol in self.symbolList:
-            self._addEntry(symbol, variableAddress)
-            variableAddress += 1
