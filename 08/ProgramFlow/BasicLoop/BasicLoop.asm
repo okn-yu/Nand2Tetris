@@ -96,7 +96,7 @@ M=M-1
 A=M
 D=M
 @LOOP_START
-D;JGT
+D;JNE
 @LCL
 A=M
 D=M
