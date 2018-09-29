@@ -10,13 +10,18 @@ from hackcompiler import sub_call as sc
 class CodeWriter:
     def __init__(self, filePath, parsedVMLines):
 
-        asm._init_vsgm()
+        self._boot_strap()
 
         for parsedVMLine in parsedVMLines:
             # print(parsedVMLine)
             self._parse(parsedVMLine)
 
         self._write_file(filePath)
+
+    def _boot_strap(self):
+        asm.set_vreg(value='256', reg='SP')
+        asm._init_vsgm()
+        sc.write_call('Sys.init', '0')
 
     def _parse(self, parsedVMLine):
         command = parsedVMLine.get('command')

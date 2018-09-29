@@ -54,10 +54,10 @@ class AsmCode:
 
     @classmethod
     def _init_vsgm(cls):
-        # for UT.
-        AsmCode.set_vreg(value='261', reg='SP')
-        #AsmCode.set_vreg(value='300', reg='LCL')
-        #AsmCode.set_vreg(value='400', reg='ARG')
+        pass
+        # AsmCode.set_vreg(value='261', reg='SP')
+        # AsmCode.set_vreg(value='300', reg='LCL')
+        # AsmCode.set_vreg(value='400', reg='ARG')
 
     @classmethod
     def set_vreg(cls, value, reg):
