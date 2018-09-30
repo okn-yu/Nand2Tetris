@@ -29,4 +29,3 @@ class PathParser:
 
         for file in filesList:
             self._parse_path(path + '/' + file)
-

@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 
+
 class compilationEngine:
 
     def __init__(self, txmlFilePath):
@@ -35,7 +36,6 @@ class compilationEngine:
     # class tokens:
     # 'class' className '{' classVarDec* subroutineDec* '}'
     def _compile_class(self):
-
 
         while True:
             tag, text = self._txml_line()
@@ -195,7 +195,6 @@ class compilationEngine:
             else:
                 self._compileExpression(returnElement)  # expression
 
-
     def _compileIf(self, element):
         ifElement = ET.SubElement(element, 'ifStatement')
         tag, text = self._txml_line()
@@ -240,10 +239,10 @@ class compilationEngine:
         elif text in ['-', '~']:
             self._add_xml(termElement)  # unary OP
             self._compileTerm(termElement)  # term
-        elif tag ==  'symbol':
-            self._add_xml(termElement) # '('
-            self._compileExpression(termElement) # expression
-            self._add_xml(termElement) # ')'
+        elif tag == 'symbol':
+            self._add_xml(termElement)  # '('
+            self._compileExpression(termElement)  # expression
+            self._add_xml(termElement)  # ')'
         elif tag == 'identifier':  # varname
             tag, text = self._next_element()
             if text == '[':
@@ -265,7 +264,6 @@ class compilationEngine:
                 self._add_xml(termElement)  # ')'
             else:
                 self._add_xml(termElement)  # varName
-
 
     def _compileExpressionList(self, element):
         expListElement = ET.SubElement(element, 'expressionList')
@@ -303,7 +301,7 @@ class compilationEngine:
 
         outDirPath = self._txmlFilePath.split('/')[0]  # ex: ArrayTest/MyMainT.xml -> ArrayTest
         outFileName = self._txmlFilePath.split('/')[1].split('.')[0][0:-1]  # ex: ArrayTest/MyMainT.xml -> MyMain
-        outFilePath = outDirPath + '/' + outFileName + '2.xml'  # ex: ArrayTest/MyMain2.xml
+        outFilePath = outDirPath + '/' + outFileName + '.xml'  # ex: ArrayTest/MyMain2.xml
 
         with open(outFilePath, 'w') as f:
             f.write(self._xmlString)
