@@ -10,7 +10,6 @@ class VMWriter():
         self._stripped_file_path = jackFile_path.split('.')[0]
         # ex Seven/Main -> Main
         self._stripped_file_name = self._stripped_file_path.split('/')[-1]
-
         self._line_number = 1
 
     def write_arithmetic(self, op):

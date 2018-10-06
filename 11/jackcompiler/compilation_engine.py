@@ -2,9 +2,6 @@ import inspect
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 
-# TODO: judge expression by method!
-# TODO: modify call symtable!
-
 class compilationEngine:
 
     def __init__(self, txmlFilePath, symbol_table, vm_writer):
